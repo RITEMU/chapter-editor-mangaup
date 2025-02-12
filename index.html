@@ -6,6 +6,7 @@
 <title>پردازشگر تصویر</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
 <style>
 :root {
 --primary: #3b82f6;
@@ -130,7 +131,6 @@ height: 0.5rem;
 background: #333;
 border-radius: 1rem;
 overflow: hidden;
-display: none;
 }
 
 .progress-bar {
@@ -169,7 +169,10 @@ text-align: center;
 color: #888;
 }
 </style>
-</hea<div class="container">
+</head>
+<body>
+
+<div class="container">
 <div class="form-group">
 <label>انتخاب پوشه‌ها</label>
 <input type="file" id="fileInput" webkitdirectory directory multiple>
@@ -274,7 +277,6 @@ folderDiv.appendChild(folderNameDiv);
 folderDiv.appendChild(fileList);
 foldersContainer.appendChild(folderDiv);
 
-// Make files sortable
 new Sortable(fileList, {
 animation: 150,
 onSort: (evt) => {
@@ -287,10 +289,101 @@ folderFiles.splice(evt.newIndex, 0, movedFile);
 });
 }
 
-// Rest of your existing code remains the same...
-// (loadImage, resizeImage, processImages, updateProgress, downloadBlob functions)
+function loadImage(file) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = (e) => {
+const img = new Image();
+img.onload = () => resolve(img);
+img.onerror = reject;
+img.src = e.target.result;
+};
+reader.onerror = reject;
+reader.readAsDataURL(file);
+});
+}
+
+function resizeImage(img, targetWidth, maxHeight) {
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+let width = targetWidth;
+let height = (img.height * width) / img.width;
+
+if (height > maxHeight) {
+height = maxHeight;
+width = (img.width * height) / img.height;
+}
+
+canvas.width = width;
+canvas.height = height;
+ctx.drawImage(img, 0, 0, width, height);
+return canvas;
+}
+
+async function processImages() {
+if (folders.size === 0) {
+alert('لطفا ابتدا پوشه‌ها را انتخاب کنید');
+return;
+}
+
+processButton.disabled = true;
+progressBar.style.display = 'block';
+let processed = 0;
+const totalImages = Array.from(folders.values()).flat().length;
+
+const zip = new JSZip();
+const width = parseInt(widthInput.value);
+const maxHeight = parseInt(maxHeightInput.value);
+const format = formatSelect.value;
+const quality = parseInt(qualityInput.value) / 100;
+
+for (const [folderName, files] of folders) {
+const folderZip = zip.folder(folderName);
+
+for (const file of files) {
+try {
+const img = await loadImage(file);
+const canvas = resizeImage(img, width, maxHeight);
+
+const blob = await new Promise(resolve => {
+canvas.toBlob(resolve, `image/${format}`, quality);
+});
+
+folderZip.file(file.name.replace(/\.[^.]+$/, `.${format}`), blob);
+
+processed++;
+updateProgress(processed / totalImages);
+} catch (error) {
+console.error(`Error processing ${file.name}:`, error);
+}
+}
+}
+
+const zipBlob = await zip.generateAsync({type: 'blob'});
+downloadBlob(zipBlob, 'processed_images.zip');
+
+processButton.disabled = false;
+}
+
+function updateProgress(progress) {
+progressBarFill.style.width = `${progress * 100}%`;
+statusText.textContent = `پردازش ${Math.round(progress * 100)}%`;
+}
+
+function downloadBlob(blob, filename) {
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = filename;
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+}
 
 processButton.addEventListener('click', processImages);
 </script>
+
 </body>
 </html>
