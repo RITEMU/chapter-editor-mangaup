@@ -1,420 +1,438 @@
-<!DOCTYPE html><html lang="fa" dir="rtl">
+ Let me help create a complete web application for processing and merging images according to your specifications. Given the complexity and functionality required, I'll create a single HTML file with embedded JavaScript that handles all the image processing.
+
+
+
+
+<html_artifact><!DOCTYPE html>
+<html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پردازشگر تصاویر</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<style>
-:root {
---primary: #2563eb;
---primary-hover: #1d4ed8;
---bg: #f8fafc;
---surface: #ffffff;
---border: #e2e8f0;
---text: #1e293b;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پردازشگر تصویر</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f5f5;
+            --border-color: #ddd;
+        }
 
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-font-family: system-ui, -apple-system, sans-serif;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
 
-body {
-background: var(--bg);
-color: var(--text);
-line-height: 1.5;
-padding: 2rem;
-}
+        body {
+            background-color: #f0f2f5;
+            padding: 2rem;
+        }
 
-.container {
-max-width: 1200px;
-margin: 0 auto;
-background: var(--surface);
-padding: 2rem;
-border-radius: 1rem;
-box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
 
-.title {
-font-size: 1.5rem;
-font-weight: 700;
-margin-bottom: 2rem;
-text-align: center;
-}
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
 
-.form-group {
-margin-bottom: 1.5rem;
-}
+        .header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
 
-.form-label {
-display: block;
-margin-bottom: 0.5rem;
-font-weight: 500;
-}
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
 
-.form-control {
-width: 100%;
-padding: 0.75rem;
-border: 1px solid var(--border);
-border-radius: 0.5rem;
-font-size: 1rem;
-}
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
 
-.btn {
-background: var(--primary);
-color: white;
-border: none;
-padding: 0.75rem 1.5rem;
-border-radius: 0.5rem;
-font-size: 1rem;
-cursor: pointer;
-transition: background 0.2s;
-}
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
 
-.btn:hover {
-background: var(--primary-hover);
-}
+        .file-list {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--secondary-color);
+            border-radius: 0.5rem;
+            min-height: 100px;
+        }
 
-.btn:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
+        .file-item {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: white;
+            border-radius: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
 
-.file-list {
-border: 1px solid var(--border);
-border-radius: 0.5rem;
-padding: 1rem;
-margin-top: 1rem;
-max-height: 300px;
-overflow-y: auto;
-}
+        .folder-name {
+            font-weight: bold;
+            margin: 1rem 0 0.5rem 0;
+        }
 
-.file-group {
-margin-bottom: 1rem;
-padding-right: 1rem;
-}
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
 
-.file-group-title {
-font-weight: 600;
-margin-bottom: 0.5rem;
-}
+        .btn:hover {
+            background-color: #357abd;
+        }
 
-.file-item {
-padding-right: 1rem;
-margin-bottom: 0.25rem;
-cursor: move;
-}
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
 
-.progress-container {
-margin-top: 1rem;
-display: none;
-}
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
 
-.progress-bar {
-width: 100%;
-height: 0.5rem;
-background: var(--border);
-border-radius: 0.25rem;
-overflow: hidden;
-}
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: var(--secondary-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
 
-.progress-fill {
-height: 100%;
-background: var(--primary);
-width: 0%;
-transition: width 0.2s;
-}
+        .progress {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
 
-.progress-text {
-text-align: center;
-margin-top: 0.5rem;
-font-size: 0.875rem;
-}
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
 
-@media (max-width: 768px) {
-body {
-padding: 1rem;
-}
-
-.container {
-padding: 1rem;
-}
-}
-</style>
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-<h1 class="title">پردازشگر تصاویر</h1>
+    <div class="container">
+        <div class="header">
+            <h1>پردازشگر تصویر</h1>
+            <p>ابزار ترکیب و تغییر سایز تصاویر</p>
+        </div>
 
-<div class="form-group">
-<label class="form-label">انتخاب پوشه‌ها</label>
-<input type="file" class="form-control" id="fileInput" webkitdirectory multiple accept="image/*">
-</div>
+        <div class="form-group">
+            <label>انتخاب پوشه‌ها:</label>
+            <input type="file" class="form-control" id="fileInput" webkitdirectory directory multiple accept="image/*">
+        </div>
 
-<div class="form-group">
-<label class="form-control">
-<input type="checkbox" id="mergeCheck" checked>
-چسباندن تصاویر
-</label>
-</div>
+        <div class="file-list" id="fileList"></div>
 
-<div id="dimensionControls">
-<div class="form-group">
-<label class="form-label">عرض (پیکسل)</label>
-<input type="number" class="form-control" id="widthInput" value="800" min="1">
-</div>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="mergeCheckbox" checked>
+            <label for="mergeCheckbox">چسباندن تصاویر</label>
+        </div>
 
-<div class="form-group">
-<label class="form-label">حداکثر طول (پیکسل)</label>
-<input type="number" class="form-control" id="heightInput" value="12000" min="1">
-</div>
-</div>
+        <div id="dimensionsGroup">
+            <div class="form-group">
+                <label>عرض تصویر (پیکسل):</label>
+                <input type="number" class="form-control" id="widthInput" value="800">
+            </div>
 
-<div class="form-group">
-<label class="form-label">فرمت خروجی</label>
-<select class="form-control" id="formatSelect">
-<option value="webp">WebP</option>
-<option value="jpeg">JPEG</option>
-<option value="png">PNG</option>
-</select>
-</div>
+            <div class="form-group">
+                <label>حداکثر طول (پیکسل):</label>
+                <input type="number" class="form-control" id="maxHeightInput" value="12000">
+            </div>
+        </div>
 
-<div class="form-group">
-<label class="form-label">کیفیت (%)</label>
-<input type="number" class="form-control" id="qualityInput" value="100" min="1" max="100">
-</div>
+        <div class="form-group">
+            <label>فرمت خروجی:</label>
+            <select class="form-control" id="formatSelect">
+                <option value="webp">WebP</option>
+                <option value="jpeg">JPEG</option>
+                <option value="png">PNG</option>
+            </select>
+        </div>
 
-<div id="fileList" class="file-list"></div>
+        <div class="form-group">
+            <label>کیفیت خروجی (%):</label>
+            <input type="number" class="form-control" id="qualityInput" value="100" min="1" max="100">
+        </div>
 
-<button id="processBtn" class="btn" disabled>شروع پردازش</button>
+        <button class="btn" id="processButton">شروع پردازش</button>
 
-<div class="progress-container" id="progressContainer">
-<div class="progress-bar">
-<div class="progress-fill" id="progressBar"></div>
-</div>
-<div class="progress-text" id="progressText">0%</div>
-</div>
-</div>
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
 
-<script>
-const fileInput = document.getElementById('fileInput');
-const mergeCheck = document.getElementById('mergeCheck');
-const widthInput = document.getElementById('widthInput');
-const heightInput = document.getElementById('heightInput');
-const formatSelect = document.getElementById('formatSelect');
-const qualityInput = document.getElementById('qualityInput');
-const fileList = document.getElementById('fileList');
-const processBtn = document.getElementById('processBtn');
-const dimensionControls = document.getElementById('dimensionControls');
-const progressContainer = document.getElementById('progressContainer');
-const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
+    <script>
+        let filesByFolder = new Map();
 
-let files = {};
+        // Elements
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const mergeCheckbox = document.getElementById('mergeCheckbox');
+        const dimensionsGroup = document.getElementById('dimensionsGroup');
+        const widthInput = document.getElementById('widthInput');
+        const maxHeightInput = document.getElementById('maxHeightInput');
+        const formatSelect = document.getElementById('formatSelect');
+        const qualityInput = document.getElementById('qualityInput');
+        const processButton = document.getElementById('processButton');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
 
-mergeCheck.addEventListener('change', () => {
-dimensionControls.style.display = mergeCheck.checked ? 'block' : 'none';
-});
+        // Event Listeners
+        mergeCheckbox.addEventListener('change', () => {
+            dimensionsGroup.classList.toggle('hidden', !mergeCheckbox.checked);
+        });
 
-fileInput.addEventListener('change', () => {
-files = {};
-fileList.innerHTML = '';
+        fileInput.addEventListener('change', handleFileSelect);
+        processButton.addEventListener('change', processImages);
 
-Array.from(fileInput.files).forEach(file => {
-if (!file.type.startsWith('image/')) return;
+        function handleFileSelect(event) {
+            filesByFolder.clear();
+            const files = Array.from(event.target.files).filter(file => 
+                file.type.startsWith('image/'));
 
-const folderPath = file.webkitRelativePath.split('/')[0];
-if (!files[folderPath]) {
-files[folderPath] = [];
-}
-files[folderPath].push(file);
-});
+            // Group files by folder
+            files.forEach(file => {
+                const pathParts = file.webkitRelativePath.split('/');
+                const folderName = pathParts[0];
+                
+                if (!filesByFolder.has(folderName)) {
+                    filesByFolder.set(folderName, []);
+                }
+                filesByFolder.get(folderName).push(file);
+            });
 
-for (const [folder, folderFiles] of Object.entries(files)) {
-const folderDiv = document.createElement('div');
-folderDiv.className = 'file-group';
-folderDiv.innerHTML = `
-<div class="file-group-title">${folder}/</div>
-${folderFiles.map(file => `
-<div class="file-item" draggable="true" data-path="${file.webkitRelativePath}">
-├── ${file.name}
-</div>
-`).join('')}
-`;
-fileList.appendChild(folderDiv);
-}
+            // Display files
+            displayFiles();
+        }
 
-processBtn.disabled = Object.keys(files).length === 0;
-setupDragAndDrop();
-});
+        function displayFiles() {
+            fileList.innerHTML = '';
+            
+            filesByFolder.forEach((files, folderName) => {
+                const folderDiv = document.createElement('div');
+                folderDiv.innerHTML = `<div class="folder-name">${folderName}/</div>`;
+                
+                const fileListDiv = document.createElement('div');
+                fileListDiv.classList.add('folder-files');
+                
+                files.forEach(file => {
+                    const fileDiv = document.createElement('div');
+                    fileDiv.classList.add('file-item');
+                    fileDiv.draggable = true;
+                    fileDiv.innerHTML = `└── ${file.name}`;
+                    fileListDiv.appendChild(fileDiv);
+                });
+                
+                folderDiv.appendChild(fileListDiv);
+                fileList.appendChild(folderDiv);
+            });
 
-function setupDragAndDrop() {
-const items = document.querySelectorAll('.file-item');
-items.forEach(item => {
-item.addEventListener('dragstart', handleDragStart);
-item.addEventListener('dragover', handleDragOver);
-item.addEventListener('drop', handleDrop);
-});
-}
+            // Enable drag and drop reordering
+            setupDragAndDrop();
+        }
 
-function handleDragStart(e) {
-e.dataTransfer.setData('text/plain', e.target.dataset.path);
-e.target.style.opacity = '0.5';
-}
+        function setupDragAndDrop() {
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            fileItems.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+            });
+        }
 
-function handleDragOver(e) {
-e.preventDefault();
-}
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.innerHTML);
+            e.target.classList.add('dragging');
+        }
 
-function handleDrop(e) {
-e.preventDefault();
-const draggedPath = e.dataTransfer.getData('text/plain');
-const droppedPath = e.target.dataset.path;
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
 
-if (draggedPath && droppedPath) {
-const draggedFolder = draggedPath.split('/')[0];
-const droppedFolder = droppedPath.split('/')[0];
+        function handleDrop(e) {
+            e.preventDefault();
+            const draggedData = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.querySelector('.dragging');
+            const dropTarget = e.target;
 
-if (draggedFolder === droppedFolder) {
-const draggedIndex = files[draggedFolder].findIndex(f => f.webkitRelativePath === draggedPath);
-const droppedIndex = files[draggedFolder].findIndex(f => f.webkitRelativePath === droppedPath);
+            if (draggedElement && dropTarget.classList.contains('file-item')) {
+                const parent = dropTarget.parentNode;
+                const temp = dropTarget.innerHTML;
+                dropTarget.innerHTML = draggedData;
+                draggedElement.innerHTML = temp;
+            }
 
-const temp = files[draggedFolder][draggedIndex];
-files[draggedFolder][draggedIndex] = files[draggedFolder][droppedIndex];
-files[draggedFolder][droppedIndex] = temp;
+            document.querySelector('.dragging')?.classList.remove('dragging');
+        }
 
-updateFileList();
-}
-}
-}
+        async function processImages() {
+            try {
+                progressContainer.style.display = 'block';
+                processButton.disabled = true;
 
-function updateFileList() {
-fileList.innerHTML = '';
-for (const [folder, folderFiles] of Object.entries(files)) {
-const folderDiv = document.createElement('div');
-folderDiv.className = 'file-group';
-folderDiv.innerHTML = `
-<div class="file-group-title">${folder}/</div>
-${folderFiles.map(file => `
-<div class="file-item" draggable="true" data-path="${file.webkitRelativePath}">
-├── ${file.name}
-</div>
-`).join('')}
-`;
-fileList.appendChild(folderDiv);
-}
-setupDragAndDrop();
-}
+                const width = parseInt(widthInput.value);
+                const maxHeight = parseInt(maxHeightInput.value);
+                const quality = parseInt(qualityInput.value) / 100;
+                const format = formatSelect.value;
+                const shouldMerge = mergeCheckbox.checked;
 
-async function processImages() {
-const width = parseInt(widthInput.value);
-const maxHeight = parseInt(heightInput.value);
-const quality = parseInt(qualityInput.value) / 100;
-const format = formatSelect.value;
-const shouldMerge = mergeCheck.checked;
+                for (const [folderName, files] of filesByFolder) {
+                    const zip = new JSZip();
+                    let processedFiles = [];
 
-processBtn.disabled = true;
-progressContainer.style.display = 'block';
+                    if (shouldMerge) {
+                        // Process and merge images
+                        const canvases = await Promise.all(files.map(async (file, index) => {
+                            const img = await createImageFromFile(file);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Calculate new dimensions maintaining aspect ratio
+                            const aspectRatio = img.width / img.height;
+                            const newHeight = Math.round(width / aspectRatio);
+                            
+                            canvas.width = width;
+                            canvas.height = newHeight;
+                            
+                            ctx.drawImage(img, 0, 0, width, newHeight);
+                            return canvas;
+                        }));
 
-for (const [folder, folderFiles] of Object.entries(files)) {
-const zip = new JSZip();
-let processedCount = 0;
+                        // Merge canvases vertically
+                        const mergedCanvas = document.createElement('canvas');
+                        const ctx = mergedCanvas.getContext('2d');
+                        
+                        const totalHeight = canvases.reduce((sum, canvas) => sum + canvas.height, 0);
+                        let currentY = 0;
+                        
+                        mergedCanvas.width = width;
+                        mergedCanvas.height = totalHeight;
+                        
+                        canvases.forEach(canvas => {
+                            ctx.drawImage(canvas, 0, currentY);
+                            currentY += canvas.height;
+                        });
 
-if (shouldMerge) {
-const images = await Promise.all(folderFiles.map(loadAndResizeImage));
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+                        // Split merged image
+                        const numFullImages = Math.floor(totalHeight / maxHeight);
+                        const remainingHeight = totalHeight % maxHeight;
 
-let totalHeight = images.reduce((sum, img) => sum + img.height, 0);
-let currentY = 0;
-let currentPart = 1;
+                        for (let i = 0; i < numFullImages; i++) {
+                            const splitCanvas = document.createElement('canvas');
+                            splitCanvas.width = width;
+                            splitCanvas.height = maxHeight;
+                            
+                            const splitCtx = splitCanvas.getContext('2d');
+                            splitCtx.drawImage(
+                                mergedCanvas,
+                                0, i * maxHeight,
+                                width, maxHeight,
+                                0, 0,
+                                width, maxHeight
+                            );
 
-while (totalHeight > 0) {
-const partHeight = Math.min(maxHeight, totalHeight);
-canvas.width = width;
-canvas.height = partHeight;
-ctx.clearRect(0, 0, width, partHeight);
+                            const fileName = `${(i + 1).toString().padStart(3, '0')}.${format}`;
+                            const blob = await canvasToBlob(splitCanvas, format, quality);
+                            zip.file(fileName, blob);
+                            processedFiles.push(fileName);
+                        }
 
-for (const img of images) {
-const remainingHeight = img.height - currentY;
-if (remainingHeight <= 0) continue;
+                        if (remainingHeight > 0) {
+                            const splitCanvas = document.createElement('canvas');
+                            splitCanvas.width = width;
+                            splitCanvas.height = remainingHeight;
+                            
+                            const splitCtx = splitCanvas.getContext('2d');
+                            splitCtx.drawImage(
+                                mergedCanvas,
+                                0, numFullImages * maxHeight,
+                                width, remainingHeight,
+                                0, 0,
+                                width, remainingHeight
+                            );
 
-const heightToDraw = Math.min(remainingHeight, partHeight);
-ctx.drawImage(img, 0, currentY, width, heightToDraw, 0, 0, width, heightToDraw);
-currentY += heightToDraw;
-}
+                            const fileName = `${(numFullImages + 1).toString().padStart(3, '0')}.${format}`;
+                            const blob = await canvasToBlob(splitCanvas, format, quality);
+                            zip.file(fileName, blob);
+                            processedFiles.push(fileName);
+                        }
+                    } else {
+                        // Just convert format and quality
+                        await Promise.all(files.map(async (file, index) => {
+                            const img = await createImageFromFile(file);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            
+                            const fileName = `${(index + 1).toString().padStart(3, '0')}.${format}`;
+                            const blob = await canvasToBlob(canvas, format, quality);
+                            zip.file(fileName, blob);
+                            processedFiles.push(fileName);
+                        }));
+                    }
 
-const blob = await new Promise(resolve => {
-canvas.toBlob(resolve, `image/${format}`, quality);
-});
+                    // Generate and download zip
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    saveAs(zipBlob, `${folderName}.zip`);
 
-zip.file(`${folder}_${String(currentPart).padStart(3, '0')}.${format}`, blob);
-currentPart++;
-totalHeight -= partHeight;
+                    // Update progress
+                    progressBar.style.width = `${((Array.from(filesByFolder.keys()).indexOf(folderName) + 1) / filesByFolder.size) * 100}%`;
+                }
 
-processedCount++;
-updateProgress(processedCount, folderFiles.length);
-}
-} else {
-for (const file of folderFiles) {
-const img = await loadAndResizeImage(file);
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+                progressContainer.style.display = 'none';
+                processButton.disabled = false;
+                alert('پردازش با موفقیت انجام شد!');
 
-canvas.width = width;
-canvas.height = Math.round(width * img.height / img.width);
-ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            } catch (error) {
+                console.error('Error processing images:', error);
+                alert('خطا در پردازش تصاویر');
+                progressContainer.style.display = 'none';
+                processButton.disabled = false;
+            }
+        }
 
-const blob = await new Promise(resolve => {
-canvas.toBlob(resolve, `image/${format}`, quality);
-});
-
-zip.file(`${file.name.split('.')[0]}.${format}`, blob);
-
-processedCount++;
-updateProgress(processedCount, folderFiles.length);
-}
-}
-
-const zipBlob = await zip.generateAsync({type: 'blob'});
-saveAs(zipBlob, `${folder}.zip`);
-}
-
-processBtn.disabled = false;
-progressContainer.style.display = 'none';
-}
-
-function loadAndResizeImage(file) {
-return new Promise((resolve) => {
-const img = new Image();
-img.onload = () => {
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-const width = parseInt(widthInput.value);
-const height = Math.round(width * img.height / img.width);
-
-canvas.width = width;
-canvas.height = height;
-ctx.drawImage(img, 0, 0, width, height);
-
-const resizedImg = new Image();
-resizedImg.onload = () => resolve(resizedImg);
-resizedImg.src = canvas.toDataURL();
-};
-img.src = URL.createObjectURL(file);
-});
-}
-
-function updateProgress(current, total) {
-const percentage = Math.round((current / total) * 100);
-progressBar.style.width = `${percentage}%`;
-progressText.textContent = `${percentage}%`;
-}
-
-processBtn.addEventListener('click', processImages);
-</script>
-</body>
-</html>
+        function createImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(</html_artifact>
