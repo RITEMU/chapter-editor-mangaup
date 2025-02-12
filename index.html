@@ -187,13 +187,170 @@ updateFileList();
 });
 
 function updateFileList() {
-fileList.innerHTML = '';
-files.forEach((folderFiles, folderName) => {
-const div = document.createElement('div');
-div.textContent = `${folderName}: ${folderFiles.length} تصویر`;
-fileList.appendChild(div);
-});
+    fileList.innerHTML = '';
+    files.forEach((folderFiles, folderName) => {
+        const folderDiv = document.createElement('div');
+        folderDiv.style.marginBottom = '1.5rem';
+        folderDiv.style.backgroundColor = '#f8f9fa';
+        folderDiv.style.borderRadius = '8px';
+        folderDiv.style.padding = '1rem';
+        folderDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        folderDiv.style.transition = 'all 0.3s ease';
+        
+        const folderNameDiv = document.createElement('div');
+        folderNameDiv.innerHTML = `📁 ${folderName}/`;
+        folderNameDiv.style.fontWeight = 'bold';
+        folderNameDiv.style.marginBottom = '0.75rem';
+        folderNameDiv.style.fontSize = '1.1rem';
+        folderNameDiv.style.color = '#2563eb';
+        folderNameDiv.style.borderBottom = '2px solid #e2e8f0';
+        folderNameDiv.style.paddingBottom = '0.5rem';
+        folderDiv.appendChild(folderNameDiv);
+        
+        const filesContainer = document.createElement('div');
+        filesContainer.style.paddingLeft = '0.5rem';
+        filesContainer.setAttribute('data-folder', folderName);
+        
+        folderFiles.forEach((file, index) => {
+            const fileDiv = document.createElement('div');
+            fileDiv.setAttribute('draggable', 'true');
+            fileDiv.setAttribute('data-index', index);
+            fileDiv.style.paddingLeft = '1.5rem';
+            fileDiv.style.marginBottom = '0.4rem';
+            fileDiv.style.position = 'relative';
+            fileDiv.style.cursor = 'move';
+            fileDiv.style.transition = 'all 0.2s ease';
+            fileDiv.style.userSelect = 'none';
+            
+            // دکمه‌های جابجایی
+            const moveButtons = document.createElement('div');
+            moveButtons.style.display = 'inline-block';
+            moveButtons.style.marginLeft = '10px';
+            moveButtons.style.visibility = 'hidden';
+            
+            // فقط اگه اولین آیتم نباشه دکمه بالا نشون بده
+            if (index > 0) {
+                const upButton = document.createElement('button');
+                upButton.innerHTML = '⬆️';
+                upButton.style.border = 'none';
+                upButton.style.background = 'none';
+                upButton.style.cursor = 'pointer';
+                upButton.style.padding = '0 2px';
+                upButton.onclick = (e) => {
+                    e.stopPropagation();
+                    moveFile(folderName, index, index - 1);
+                };
+                moveButtons.appendChild(upButton);
+            }
+            
+            // فقط اگه آخرین آیتم نباشه دکمه پایین نشون بده
+            if (index < folderFiles.length - 1) {
+                const downButton = document.createElement('button');
+                downButton.innerHTML = '⬇️';
+                downButton.style.border = 'none';
+                downButton.style.background = 'none';
+                downButton.style.cursor = 'pointer';
+                downButton.style.padding = '0 2px';
+                downButton.onclick = (e) => {
+                    e.stopPropagation();
+                    moveFile(folderName, index, index + 1);
+                };
+                moveButtons.appendChild(downButton);
+            }
+            
+            if (index === folderFiles.length - 1) {
+                fileDiv.innerHTML = `<span style="color: #94a3b8">└── </span>🖼 ${file.name}`;
+            } else {
+                fileDiv.innerHTML = `<span style="color: #94a3b8">├── </span>🖼 ${file.name}`;
+            }
+            
+            fileDiv.appendChild(moveButtons);
+            
+            fileDiv.style.fontFamily = 'monospace';
+            fileDiv.style.whiteSpace = 'pre';
+            fileDiv.style.fontSize = '0.95rem';
+            fileDiv.style.color = '#475569';
+            
+            fileDiv.addEventListener('mouseover', () => {
+                fileDiv.style.color = '#2563eb';
+                fileDiv.style.transform = 'translateX(5px)';
+                moveButtons.style.visibility = 'visible';
+            });
+            
+            fileDiv.addEventListener('mouseout', () => {
+                fileDiv.style.color = '#475569';
+                fileDiv.style.transform = 'translateX(0)';
+                if (!fileDiv.classList.contains('dragging')) {
+                    moveButtons.style.visibility = 'hidden';
+                }
+            });
+            
+            // Drag & Drop handlers
+            fileDiv.addEventListener('dragstart', (e) => {
+                fileDiv.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    folderName,
+                    sourceIndex: index
+                }));
+            });
+            
+            fileDiv.addEventListener('dragend', () => {
+                fileDiv.classList.remove('dragging');
+                filesContainer.querySelectorAll('[data-index]').forEach(el => {
+                    el.style.borderTop = 'none';
+                    el.style.borderBottom = 'none';
+                });
+            });
+            
+            fileDiv.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const rect = fileDiv.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    fileDiv.style.borderTop = '2px solid #2563eb';
+                    fileDiv.style.borderBottom = 'none';
+                } else {
+                    fileDiv.style.borderBottom = '2px solid #2563eb';
+                    fileDiv.style.borderTop = 'none';
+                }
+            });
+            
+            fileDiv.addEventListener('dragleave', () => {
+                fileDiv.style.borderTop = 'none';
+                fileDiv.style.borderBottom = 'none';
+            });
+            
+            fileDiv.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                if (data.folderName === folderName) {
+                    const rect = fileDiv.getBoundingClientRect();
+                    const mid = rect.top + rect.height / 2;
+                    const targetIndex = e.clientY < mid ? index : index + 1;
+                    moveFile(folderName, data.sourceIndex, targetIndex);
+                }
+            });
+            
+            filesContainer.appendChild(fileDiv);
+        });
+        
+        folderDiv.appendChild(filesContainer);
+        fileList.appendChild(folderDiv);
+    });
 }
+
+// تابع جابجایی فایل‌ها
+function moveFile(folderName, sourceIndex, targetIndex) {
+    const folderFiles = files.get(folderName);
+    if (sourceIndex === targetIndex) return;
+    
+    const [movedFile] = folderFiles.splice(sourceIndex, 1);
+    folderFiles.splice(targetIndex, 0, movedFile);
+    files.set(folderName, folderFiles);
+    updateFileList();
+}
+
+
 
 function loadImage(file) {
 return new Promise((resolve, reject) => {
