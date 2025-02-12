@@ -2,7 +2,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پردازشگر تصویر</title>
+<title>چسباننده ی چپتر مانگا اپ </title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root {
@@ -222,13 +222,11 @@ function updateFileList() {
             fileDiv.style.transition = 'all 0.2s ease';
             fileDiv.style.userSelect = 'none';
             
-            // دکمه‌های جابجایی
             const moveButtons = document.createElement('div');
             moveButtons.style.display = 'inline-block';
             moveButtons.style.marginLeft = '10px';
             moveButtons.style.visibility = 'hidden';
             
-            // فقط اگه اولین آیتم نباشه دکمه بالا نشون بده
             if (index > 0) {
                 const upButton = document.createElement('button');
                 upButton.innerHTML = '⬆️';
@@ -243,7 +241,6 @@ function updateFileList() {
                 moveButtons.appendChild(upButton);
             }
             
-            // فقط اگه آخرین آیتم نباشه دکمه پایین نشون بده
             if (index < folderFiles.length - 1) {
                 const downButton = document.createElement('button');
                 downButton.innerHTML = '⬇️';
@@ -285,7 +282,6 @@ function updateFileList() {
                 }
             });
             
-            // Drag & Drop handlers
             fileDiv.addEventListener('dragstart', (e) => {
                 fileDiv.classList.add('dragging');
                 e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -339,7 +335,6 @@ function updateFileList() {
     });
 }
 
-// تابع جابجایی فایل‌ها
 function moveFile(folderName, sourceIndex, targetIndex) {
     const folderFiles = files.get(folderName);
     if (sourceIndex === targetIndex) return;
@@ -418,7 +413,6 @@ try {
 for (const [folderName, folderFiles] of files) {
 statusText.textContent = `در حال پردازش پوشه: ${folderName}`;
 
-// Step 1 & 2: Resize images and calculate total height
 const resizedImages = [];
 let totalHeight = 0;
 
@@ -433,15 +427,12 @@ resizedImages.push(resizedCanvas);
 totalHeight += resizedCanvas.height;
 }
 
-// Step 3 & 4: Calculate number of output images
 const numFullSections = Math.floor(totalHeight / maxHeight);
 const remainingHeight = totalHeight % maxHeight;
 
-// Step 5 & 6: Create and save sections
 const zip = new JSZip();
 let currentY = 0;
 
-// Process full sections
 for (let section = 0; section < numFullSections; section++) {
 const progress = 0.4 + (section / numFullSections) * 0.6;
 updateProgress(progress);
@@ -480,7 +471,6 @@ zip.file(`${sectionNumber}.${format}`, blob);
 currentY += maxHeight;
 }
 
-// Process remaining height if any
 if (remainingHeight > 0) {
 statusText.textContent = `در حال ایجاد بخش نهایی`;
 updateProgress(0.9);
@@ -516,13 +506,11 @@ sectionCanvas.toBlob(resolve, `image/${format}`, quality);
 zip.file(`${sectionNumber}.${format}`, blob);
 }
 
-// Clean up
 resizedImages.forEach(canvas => {
 canvas.width = 0;
 canvas.height = 0;
 });
 
-// Save zip file
 statusText.textContent = 'در حال ایجاد فایل زیپ...';
 updateProgress(1);
 const zipBlob = await zip.generateAsync({ type: 'blob' });
