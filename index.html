@@ -1,43 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image Merger Pro</title>
-<!-- Import Material Icons -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">
-<!-- Import Toastify for notifications -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.11.2/toastify.min.css" rel="stylesheet">
+<title>پردازشگر تصاویر</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <style>
 :root {
---primary-color: #4285f4;
---bg-dark: #1f1f1f;
---text-light: #ffffff;
+--primary: #2563eb;
+--primary-dark: #1d4ed8;
+--background: #f8fafc;
+--surface: #ffffff;
+--text: #1e293b;
+--border: #e2e8f0;
 }
 
 * {
 margin: 0;
 padding: 0;
 box-sizing: border-box;
+font-family: system-ui, -apple-system, sans-serif;
 }
 
 body {
-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-background: #2b2b2b;
-color: var(--text-light);
-min-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
+background-color: var(--background);
+color: var(--text);
+line-height: 1.5;
+padding: 1rem;
 }
 
 .container {
-background: var(--bg-dark);
+max-width: 1200px;
+margin: 0 auto;
 padding: 2rem;
+background-color: var(--surface);
 border-radius: 1rem;
-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-width: 90%;
-max-width: 800px;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header {
@@ -45,243 +42,320 @@ text-align: center;
 margin-bottom: 2rem;
 }
 
-.header h1 {
-color: var(--primary-color);
-font-size: 2rem;
-margin-bottom: 0.5rem;
-}
-
-.tabs {
-display: flex;
-gap: 1rem;
-margin-bottom: 2rem;
-}
-
-.tab {
-flex: 1;
-padding: 1rem;
-border: none;
-background: #333;
-color: #fff;
-cursor: pointer;
-border-radius: 0.5rem;
-transition: all 0.3s ease;
-}
-
-.tab.active {
-background: var(--primary-color);
-}
-
-.input-group {
+.form-group {
 margin-bottom: 1.5rem;
 }
 
-.input-group label {
+label {
 display: block;
 margin-bottom: 0.5rem;
-color: #ccc;
+font-weight: 500;
 }
 
-.input-group input,
-.input-group select {
+input[type="number"],
+input[type="file"],
+select {
 width: 100%;
-padding: 0.8rem;
-border: 1px solid #444;
-background: #333;
-color: #fff;
+padding: 0.75rem;
+border: 1px solid var(--border);
 border-radius: 0.5rem;
+background-color: var(--surface);
+margin-top: 0.25rem;
 }
 
-.file-drop {
-border: 2px dashed #444;
-padding: 2rem;
-text-align: center;
-border-radius: 0.5rem;
-margin-bottom: 1.5rem;
-cursor: pointer;
-transition: all 0.3s ease;
-}
-
-.file-drop:hover {
-border-color: var(--primary-color);
-}
-
-.btn {
-width: 100%;
+.file-list {
+margin-top: 1rem;
 padding: 1rem;
+border: 1px solid var(--border);
+border-radius: 0.5rem;
+min-height: 100px;
+max-height: 300px;
+overflow-y: auto;
+}
+
+.file-item {
+padding: 0.5rem;
+margin-bottom: 0.5rem;
+background-color: var(--background);
+border-radius: 0.25rem;
+}
+
+.button {
+display: inline-block;
+padding: 0.75rem 1.5rem;
+background-color: var(--primary);
+color: white;
 border: none;
-background: var(--primary-color);
-color: #fff;
 border-radius: 0.5rem;
 cursor: pointer;
-font-size: 1rem;
-transition: all 0.3s ease;
-}
-
-.btn:hover {
-background: #3367d6;
-}
-
-.preview {
-margin-top: 1.5rem;
-padding: 1rem;
-background: #333;
-border-radius: 0.5rem;
-min-height: 200px;
-}
-
-.progress {
+font-weight: 500;
+transition: background-color 0.2s;
 width: 100%;
-height: 0.5rem;
-background: #333;
-border-radius: 1rem;
-overflow: hidden;
-margin: 1rem 0;
+}
+
+.button:hover {
+background-color: var(--primary-dark);
+}
+
+.button:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.progress-container {
+margin-top: 1rem;
+display: none;
 }
 
 .progress-bar {
+width: 100%;
+height: 0.5rem;
+background-color: var(--border);
+border-radius: 0.25rem;
+overflow: hidden;
+}
+
+.progress-fill {
 height: 100%;
-background: var(--primary-color);
+background-color: var(--primary);
 width: 0%;
-transition: width 0.3s ease;
+transition: width 0.3s;
+}
+
+.hidden {
+display: none;
+}
+
+@media (min-width: 768px) {
+.form-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 1rem;
+}
 }
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
-<h1>Image Merger Pro</h1>
-<p>Merge and process your images easily</p>
+<h1>پردازشگر تصاویر</h1>
 </div>
 
-<div class="tabs">
-<button class="tab active" onclick="switchTab('merge')">Merge Images</button>
-<button class="tab" onclick="switchTab('settings')">Settings</button>
+<div class="form-group">
+<label for="fileInput">انتخاب فایل‌ها:</label>
+<input type="file" id="fileInput" multiple accept="image/*" webkitdirectory directory>
+<div class="file-list" id="fileList"></div>
 </div>
 
-<div id="merge-tab">
-<div class="file-drop" id="dropZone">
-<i class="material-icons">cloud_upload</i>
-<p>Drag & Drop images here or click to select</p>
-<input type="file" id="fileInput" multiple accept="image/*" style="display: none">
+<div class="form-grid">
+<div class="form-group">
+<label>
+<input type="checkbox" id="mergeCheck" checked>
+چسباندن تصاویر
+</label>
 </div>
 
-<div class="input-group">
-<label>Output Format</label>
-<select id="formatSelect">
-<option value="jpg">JPG</option>
-<option value="png">PNG</option>
+<div class="form-group">
+<label for="format">فرمت خروجی:</label>
+<select id="format">
 <option value="webp">WebP</option>
+<option value="jpeg">JPG</option>
+<option value="png">PNG</option>
 </select>
 </div>
 
-<div class="progress">
-<div class="progress-bar" id="progressBar"></div>
+<div class="form-group" id="widthGroup">
+<label for="width">عرض (پیکسل):</label>
+<input type="number" id="width" value="800" min="1">
 </div>
 
-<button class="btn" onclick="processImages()">Merge Images</button>
-
-<div class="preview" id="previewArea">
-<!-- Preview will be shown here -->
-</div>
-</div>
+<div class="form-group" id="heightGroup">
+<label for="height">حداکثر طول (پیکسل):</label>
+<input type="number" id="height" value="12000" min="1">
 </div>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.11.2/toastify.min.js"></script>
+<div class="form-group">
+<label for="quality">کیفیت خروجی (%):</label>
+<input type="number" id="quality" value="100" min="1" max="100">
+</div>
+</div>
+
+<button id="processButton" class="button" disabled>شروع پردازش</button>
+
+<div class="progress-container" id="progressContainer">
+<div class="progress-bar">
+<div class="progress-fill" id="progressBar"></div>
+</div>
+<div id="progressText" style="text-align: center; margin-top: 0.5rem">0%</div>
+</div>
+</div>
+
 <script>
-// Globals
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const mergeCheck = document.getElementById('mergeCheck');
+const widthGroup = document.getElementById('widthGroup');
+const heightGroup = document.getElementById('heightGroup');
+const processButton = document.getElementById('processButton');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+
 let selectedFiles = [];
 
-// Event Listeners
-document.getElementById('dropZone').addEventListener('click', () => {
-document.getElementById('fileInput').click();
+// Toggle dimension inputs based on merge checkbox
+mergeCheck.addEventListener('change', () => {
+widthGroup.classList.toggle('hidden', !mergeCheck.checked);
+heightGroup.classList.toggle('hidden', !mergeCheck.checked);
 });
 
-document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+// Handle file selection
+fileInput.addEventListener('change', () => {
+selectedFiles = Array.from(fileInput.files).filter(file => 
+file.type.startsWith('image/'));
 
-// Setup drag and drop
-const dropZone = document.getElementById('dropZone');
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-dropZone.addEventListener(eventName, preventDefaults, false);
-});
-
-function preventDefaults(e) {
-e.preventDefault();
-e.stopPropagation();
-}
-
-dropZone.addEventListener('drop', handleDrop, false);
-
-function handleDrop(e) {
-const dt = e.dataTransfer;
-const files = dt.files;
-handleFiles(files);
-}
-
-function handleFileSelect(e) {
-handleFiles(e.target.files);
-}
-
-function handleFiles(files) {
-selectedFiles = [...files];
-updatePreview();
-}
-
-function updatePreview() {
-const previewArea = document.getElementById('previewArea');
-previewArea.innerHTML = '';
-
+fileList.innerHTML = '';
 selectedFiles.forEach(file => {
-const reader = new FileReader();
-reader.onload = (e) => {
-const img = document.createElement('img');
-img.src = e.target.result;
-img.style.maxWidth = '100px';
-img.style.margin = '5px';
-previewArea.appendChild(img);
+const item = document.createElement('div');
+item.className = 'file-item';
+item.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+fileList.appendChild(item);
+});
+
+processButton.disabled = selectedFiles.length === 0;
+});
+
+// Process images
+processButton.addEventListener('click', async () => {
+const width = parseInt(document.getElementById('width').value);
+const maxHeight = parseInt(document.getElementById('height').value);
+const quality = parseInt(document.getElementById('quality').value) / 100;
+const format = document.getElementById('format').value;
+const shouldMerge = mergeCheck.checked;
+
+processButton.disabled = true;
+progressContainer.style.display = 'block';
+
+try {
+// Group files by directory
+const directories = {};
+selectedFiles.forEach(file => {
+const path = file.webkitRelativePath;
+const dir = path.split('/')[0];
+if (!directories[dir]) directories[dir] = [];
+directories[dir].push(file);
+});
+
+let processed = 0;
+const totalFiles = selectedFiles.length;
+
+// Process each directory
+for (const [dirName, files] of Object.entries(directories)) {
+const zip = new JSZip();
+
+// Load all images in the directory
+const images = await Promise.all(files.map(async file => {
+const img = new Image();
+img.src = URL.createObjectURL(file);
+await new Promise(resolve => img.onload = resolve);
+return img;
+}));
+
+if (shouldMerge) {
+// Calculate dimensions after width normalization
+const normalizedHeights = images.map(img => 
+Math.round(img.height * (width / img.width)));
+const totalHeight = normalizedHeights.reduce((a, b) => a + b, 0);
+
+// Calculate number of output images needed
+const numOutputs = Math.ceil(totalHeight / maxHeight);
+const targetHeight = Math.min(maxHeight, 
+Math.ceil(totalHeight / numOutputs));
+
+// Create merged images
+let currentY = 0;
+let currentCanvas = document.createElement('canvas');
+currentCanvas.width = width;
+currentCanvas.height = targetHeight;
+let ctx = currentCanvas.getContext('2d');
+let imageIndex = 1;
+
+for (let i = 0; i < images.length; i++) {
+const img = images[i];
+const scaledHeight = normalizedHeights[i];
+
+if (currentY + scaledHeight > targetHeight) {
+// Save current canvas and start new one
+zip.file(`${imageIndex}.${format}`, 
+dataURLToBlob(currentCanvas.toDataURL(`image/${format}`, quality)));
+imageIndex++;
+
+currentCanvas = document.createElement('canvas');
+currentCanvas.width = width;
+currentCanvas.height = targetHeight;
+ctx = currentCanvas.getContext('2d');
+currentY = 0;
 }
-reader.readAsDataURL(file);
+
+ctx.drawImage(img, 0, currentY, width, scaledHeight);
+currentY += scaledHeight;
+}
+
+// Save last canvas
+if (currentY > 0) {
+zip.file(`${imageIndex}.${format}`, 
+dataURLToBlob(currentCanvas.toDataURL(`image/${format}`, quality)));
+}
+} else {
+// Process images individually
+images.forEach((img, index) => {
+const canvas = document.createElement('canvas');
+canvas.width = img.width;
+canvas.height = img.height;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0);
+
+zip.file(`${index + 1}.${format}`, 
+dataURLToBlob(canvas.toDataURL(`image/${format}`, quality)));
 });
 }
 
-function processImages() {
-if (selectedFiles.length === 0) {
-showNotification('Please select images first', 'error');
-return;
+processed += files.length;
+const progress = (processed / totalFiles) * 100;
+progressBar.style.width = `${progress}%`;
+progressText.textContent = `${Math.round(progress)}%`;
+
+// Generate and download zip
+const zipBlob = await zip.generateAsync({ type: 'blob' });
+const link = document.createElement('a');
+link.href = URL.createObjectURL(zipBlob);
+link.download = `${dirName}.zip`;
+link.click();
 }
 
-// Simulate processing
-const progressBar = document.getElementById('progressBar');
-let progress = 0;
+alert('پردازش با موفقیت انجام شد!');
+} catch (error) {
+console.error(error);
+alert('خطا در پردازش تصاویر');
+}
 
-const interval = setInterval(() => {
-progress += 5;
-progressBar.style.width = progress + '%';
-
-if (progress >= 100) {
-clearInterval(interval);
-showNotification('Images merged successfully!', 'success');
+processButton.disabled = false;
+progressContainer.style.display = 'none';
 progressBar.style.width = '0%';
-}
-}, 100);
-}
+progressText.textContent = '0%';
+});
 
-function showNotification(message, type) {
-Toastify({
-text: message,
-duration: 3000,
-gravity: "top",
-position: "center",
-backgroundColor: type === 'error' ? "#ff5252" : "#4caf50",
-}).showToast();
+// Helper function to convert data URL to Blob
+function dataURLToBlob(dataURL) {
+const arr = dataURL.split(',');
+const mime = arr[0].match(/:(.*?);/)[1];
+const bstr = atob(arr[1]);
+let n = bstr.length;
+const u8arr = new Uint8Array(n);
+while (n--) {
+u8arr[n] = bstr.charCodeAt(n);
 }
-
-function switchTab(tab) {
-const tabs = document.querySelectorAll('.tab');
-tabs.forEach(t => t.classList.remove('active'));
-event.target.classList.add('active');
+return new Blob([u8arr], { type: mime });
 }
 </script>
 </body>
