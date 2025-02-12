@@ -1,25 +1,26 @@
-<!DOCTYPE html><html lang=“fa” dir=“rtl”>
+<!DOCTYPE html><html lang="fa" dir="rtl">
 <head>
-<meta charset=“UTF-8”>
-<meta name=“viewport” content=“width=device-width, initial-scale=1.0”>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>پردازشگر تصویر</title>
-<script src=“https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js”></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root {
-–primary: #2563eb;
-–primary-hover: #1d4ed8;
-–bg: #f8fafc;
-–border: #e2e8f0;
+--primary: #2563eb;
+--primary-hover: #1d4ed8;
+--bg: #f8fafc;
+--border: #e2e8f0;
 }
 
-{
+* {
 margin: 0;
 padding: 0;
 box-sizing: border-box;
 font-family: system-ui, -apple-system, sans-serif;
 }
+
 body {
-background: var(–bg);
+background: var(--bg);
 padding: 2rem;
 min-height: 100vh;
 }
@@ -43,18 +44,18 @@ margin-bottom: 0.5rem;
 font-weight: 500;
 }
 
-input[type=“number”],
-input[type=“range”],
+input[type="number"],
+input[type="range"],
 select {
 width: 100%;
 padding: 0.5rem;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 border-radius: 0.5rem;
 font-size: 1rem;
 }
 
 button {
-background: var(–primary);
+background: var(--primary);
 color: white;
 border: none;
 padding: 0.75rem 1.5rem;
@@ -66,7 +67,7 @@ font-size: 1rem;
 }
 
 button:hover {
-background: var(–primary-hover);
+background: var(--primary-hover);
 }
 
 button:disabled {
@@ -75,7 +76,7 @@ cursor: not-allowed;
 }
 
 .file-list {
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 border-radius: 0.5rem;
 padding: 1rem;
 margin-top: 1rem;
@@ -86,7 +87,7 @@ overflow-y: auto;
 .progress {
 margin-top: 1rem;
 height: 0.5rem;
-background: var(–border);
+background: var(--border);
 border-radius: 0.25rem;
 overflow: hidden;
 display: none;
@@ -94,7 +95,7 @@ display: none;
 
 .progress-bar {
 height: 100%;
-background: var(–primary);
+background: var(--primary);
 width: 0;
 transition: width 0.3s ease;
 }
@@ -107,75 +108,75 @@ color: #666;
 </style>
 </head>
 <body>
-<div class=“container”>
-<div class=“form-group”>
+<div class="container">
+<div class="form-group">
 <label>انتخاب فایل‌ها</label>
-<input type=“file” id=“fileInput” webkitdirectory directory multiple>
+<input type="file" id="fileInput" webkitdirectory directory multiple>
 </div>
 
-<div class=“file-list” id=“fileList”></div>
+<div class="file-list" id="fileList"></div>
 
-<div class=“form-group”>
+<div class="form-group">
 <label>عرض (پیکسل)</label>
-<input type=“number” id=“widthInput” value=“800” min=“1” max=“10000”>
+<input type="number" id="widthInput" value="800" min="1" max="10000">
 </div>
 
-<div class=“form-group”>
+<div class="form-group">
 <label>حداکثر طول (پیکسل)</label>
-<input type=“number” id=“maxHeightInput” value=“14000” min=“1” max=“20000”>
+<input type="number" id="maxHeightInput" value="14000" min="1" max="20000">
 </div>
 
-<div class=“form-group”>
+<div class="form-group">
 <label>فرمت خروجی</label>
-<select id=“formatSelect”>
-<option value=“webp”>WebP</option>
-<option value=“jpeg”>JPEG</option>
-<option value=“png”>PNG</option>
+<select id="formatSelect">
+<option value="webp">WebP</option>
+<option value="jpeg">JPEG</option>
+<option value="png">PNG</option>
 </select>
 </div>
 
-<div class=“form-group”>
-<label>کیفیت: <span id=“qualityValue”>100</span>%</label>
-<input type=“range” id=“qualityInput” min=“1” max=“100” value=“100”>
+<div class="form-group">
+<label>کیفیت: <span id="qualityValue">100</span>%</label>
+<input type="range" id="qualityInput" min="1" max="100" value="100">
 </div>
 
-<button id=“processButton”>شروع پردازش</button>
+<button id="processButton">شروع پردازش</button>
 
-<div class=“progress” id=“progressBar”>
-<div class=“progress-bar” id=“progressBarFill”></div>
+<div class="progress" id="progressBar">
+<div class="progress-bar" id="progressBarFill"></div>
 </div>
 
-<div class=“status” id=“statusText”></div>
+<div class="status" id="statusText"></div>
 </div>
 
 <script>
-const fileInput = document.getElementById(‘fileInput’);
-const fileList = document.getElementById(‘fileList’);
-const widthInput = document.getElementById(‘widthInput’);
-const maxHeightInput = document.getElementById(‘maxHeightInput’);
-const formatSelect = document.getElementById(‘formatSelect’);
-const qualityInput = document.getElementById(‘qualityInput’);
-const qualityValue = document.getElementById(‘qualityValue’);
-const processButton = document.getElementById(‘processButton’);
-const progressBar = document.getElementById(‘progressBar’);
-const progressBarFill = document.getElementById(‘progressBarFill’);
-const statusText = document.getElementById(‘statusText’);
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const widthInput = document.getElementById('widthInput');
+const maxHeightInput = document.getElementById('maxHeightInput');
+const formatSelect = document.getElementById('formatSelect');
+const qualityInput = document.getElementById('qualityInput');
+const qualityValue = document.getElementById('qualityValue');
+const processButton = document.getElementById('processButton');
+const progressBar = document.getElementById('progressBar');
+const progressBarFill = document.getElementById('progressBarFill');
+const statusText = document.getElementById('statusText');
 
 let files = new Map();
 
-qualityInput.addEventListener(‘input’, () => {
+qualityInput.addEventListener('input', () => {
 qualityValue.textContent = qualityInput.value;
 });
 
-fileInput.addEventListener(‘change’, () => {
+fileInput.addEventListener('change', () => {
 files.clear();
-fileList.innerHTML = ‘’;
+fileList.innerHTML = '';
 
 Array.from(fileInput.files)
-.filter(file => file.type.startsWith(‘image/’))
+.filter(file => file.type.startsWith('image/'))
 .sort((a, b) => a.name.localeCompare(b.name))
 .forEach(file => {
-const folderPath = file.webkitRelativePath.split(‘/’)[0];
+const folderPath = file.webkitRelativePath.split('/')[0];
 if (!files.has(folderPath)) {
 files.set(folderPath, []);
 }
@@ -186,10 +187,10 @@ updateFileList();
 });
 
 function updateFileList() {
-fileList.innerHTML = ‘’;
+fileList.innerHTML = '';
 files.forEach((folderFiles, folderName) => {
-const div = document.createElement(‘div’);
-div.textContent = ${folderName}: ${folderFiles.length} تصویر;
+const div = document.createElement('div');
+div.textContent = `${folderName}: ${folderFiles.length} تصویر`;
 fileList.appendChild(div);
 });
 }
@@ -198,8 +199,8 @@ function loadImage(file) {
 return new Promise((resolve, reject) => {
 const img = new Image();
 const loadTimeout = setTimeout(() => {
-img.src = ‘’;
-reject(new Error(‘تایم لود عکس تموم شد’));
+img.src = '';
+reject(new Error('تایم لود عکس تموم شد'));
 }, 30000);
 
 img.onload = () => {
@@ -210,7 +211,7 @@ URL.revokeObjectURL(img.src);
 
 img.onerror = () => {
 clearTimeout(loadTimeout);
-reject(new Error(لود نشد: ${file.name}));
+reject(new Error(`لود نشد: ${file.name}`));
 URL.revokeObjectURL(img.src);
 };
 
@@ -219,8 +220,8 @@ img.src = URL.createObjectURL(file);
 }
 
 async function resizeImage(img, targetWidth) {
-const canvas = document.createElement(‘canvas’);
-const ctx = canvas.getContext(‘2d’);
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
 
 const aspectRatio = img.width / img.height;
 const newHeight = Math.round(targetWidth / aspectRatio);
@@ -234,7 +235,7 @@ return canvas;
 
 async function processImages() {
 if (files.size === 0) {
-alert(‘لطفاً ابتدا فایل‌ها را انتخاب کنید.’);
+alert('لطفاً ابتدا فایل‌ها را انتخاب کنید.');
 return;
 }
 
@@ -244,21 +245,21 @@ const quality = parseInt(qualityInput.value) / 100;
 const format = formatSelect.value;
 
 if (width <= 0 || width > 10000) {
-alert(‘عرض باید بین 1 تا 10000 پیکسل باشد.’);
+alert('عرض باید بین 1 تا 10000 پیکسل باشد.');
 return;
 }
 
 if (maxHeight <= 0 || maxHeight > 20000) {
-alert(‘حداکثر طول باید بین 1 تا 20000 پیکسل باشد.’);
+alert('حداکثر طول باید بین 1 تا 20000 پیکسل باشد.');
 return;
 }
 
-progressBar.style.display = ‘block’;
+progressBar.style.display = 'block';
 processButton.disabled = true;
 
 try {
 for (const [folderName, folderFiles] of files) {
-statusText.textContent = در حال پردازش پوشه: ${folderName};
+statusText.textContent = `در حال پردازش پوشه: ${folderName}`;
 
 // Step 1 & 2: Resize images and calculate total height
 const resizedImages = [];
@@ -267,7 +268,7 @@ let totalHeight = 0;
 for (let i = 0; i < folderFiles.length; i++) {
 const progress = (i / folderFiles.length) * 0.4;
 updateProgress(progress);
-statusText.textContent = در حال تغییر اندازه تصویر ${i + 1} از ${folderFiles.length};
+statusText.textContent = `در حال تغییر اندازه تصویر ${i + 1} از ${folderFiles.length}`;
 
 const img = await loadImage(folderFiles[i]);
 const resizedCanvas = await resizeImage(img, width);
@@ -287,12 +288,12 @@ let currentY = 0;
 for (let section = 0; section < numFullSections; section++) {
 const progress = 0.4 + (section / numFullSections) * 0.6;
 updateProgress(progress);
-statusText.textContent = در حال ایجاد بخش ${section + 1} از ${numFullSections + (remainingHeight > 0 ? 1 : 0)};
+statusText.textContent = `در حال ایجاد بخش ${section + 1} از ${numFullSections + (remainingHeight > 0 ? 1 : 0)}`;
 
-const sectionCanvas = document.createElement(‘canvas’);
+const sectionCanvas = document.createElement('canvas');
 sectionCanvas.width = width;
 sectionCanvas.height = maxHeight;
-const ctx = sectionCanvas.getContext(‘2d’);
+const ctx = sectionCanvas.getContext('2d');
 
 let drawY = 0;
 let processedHeight = 0;
@@ -313,24 +314,24 @@ drawY += drawHeight;
 processedHeight += canvas.height;
 }
 
-const sectionNumber = String(section + 1).padStart(3, ‘0’);
+const sectionNumber = String(section + 1).padStart(3, '0');
 const blob = await new Promise(resolve => {
-sectionCanvas.toBlob(resolve, image/${format}, quality);
+sectionCanvas.toBlob(resolve, `image/${format}`, quality);
 });
-zip.file(${sectionNumber}.${format}, blob);
+zip.file(`${sectionNumber}.${format}`, blob);
 
 currentY += maxHeight;
 }
 
 // Process remaining height if any
 if (remainingHeight > 0) {
-statusText.textContent = در حال ایجاد بخش نهایی;
+statusText.textContent = `در حال ایجاد بخش نهایی`;
 updateProgress(0.9);
 
-const sectionCanvas = document.createElement(‘canvas’);
+const sectionCanvas = document.createElement('canvas');
 sectionCanvas.width = width;
 sectionCanvas.height = remainingHeight;
-const ctx = sectionCanvas.getContext(‘2d’);
+const ctx = sectionCanvas.getContext('2d');
 
 let drawY = 0;
 let processedHeight = 0;
@@ -351,11 +352,11 @@ drawY += drawHeight;
 processedHeight += canvas.height;
 }
 
-const sectionNumber = String(numFullSections + 1).padStart(3, ‘0’);
+const sectionNumber = String(numFullSections + 1).padStart(3, '0');
 const blob = await new Promise(resolve => {
-sectionCanvas.toBlob(resolve, image/${format}, quality);
+sectionCanvas.toBlob(resolve, `image/${format}`, quality);
 });
-zip.file(${sectionNumber}.${format}, blob);
+zip.file(`${sectionNumber}.${format}`, blob);
 }
 
 // Clean up
@@ -365,36 +366,36 @@ canvas.height = 0;
 });
 
 // Save zip file
-statusText.textContent = ‘در حال ایجاد فایل زیپ…’;
+statusText.textContent = 'در حال ایجاد فایل زیپ...';
 updateProgress(1);
-const zipBlob = await zip.generateAsync({ type: ‘blob’ });
-downloadBlob(zipBlob, ${folderName}.zip);
+const zipBlob = await zip.generateAsync({ type: 'blob' });
+downloadBlob(zipBlob, `${folderName}.zip`);
 }
 
-statusText.textContent = ‘پردازش با موفقیت انجام شد!’;
+statusText.textContent = 'پردازش با موفقیت انجام شد!';
 } catch (error) {
-console.error(‘Error:’, error);
-statusText.textContent = ‘خطا در پردازش تصاویر’;
-alert('خطا در پردازش تصاویر: ’ + error.message);
+console.error('Error:', error);
+statusText.textContent = 'خطا در پردازش تصاویر';
+alert('خطا در پردازش تصاویر: ' + error.message);
 }
 
-progressBar.style.display = ‘none’;
+progressBar.style.display = 'none';
 processButton.disabled = false;
 }
 
 function updateProgress(ratio) {
-progressBarFill.style.width = ${ratio * 100}%;
+progressBarFill.style.width = `${ratio * 100}%`;
 }
 
 function downloadBlob(blob, fileName) {
-const link = document.createElement(‘a’);
+const link = document.createElement('a');
 link.href = URL.createObjectURL(blob);
 link.download = fileName;
 link.click();
 URL.revokeObjectURL(link.href);
 }
 
-processButton.addEventListener(‘click’, processImages);
+processButton.addEventListener('click', processImages);
 </script>
 </body>
 </html>
