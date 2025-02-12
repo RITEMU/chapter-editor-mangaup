@@ -1,285 +1,288 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Directory Manager</title>
-    <style>
-        /* Base styles */
-        :root {
-            --primary-color: #4a90e2;
-            --error-color: #e74c3c;
-            --success-color: #2ecc71;
-            --background-color: #f5f6fa;
-            --text-color: #2c3e50;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Merger Pro</title>
+<!-- Import Material Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">
+<!-- Import Toastify for notifications -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.11.2/toastify.min.css" rel="stylesheet">
+<style>
+:root {
+--primary-color: #4285f4;
+--bg-dark: #1f1f1f;
+--text-light: #ffffff;
+}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background: #2b2b2b;
+color: var(--text-light);
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+}
 
-        /* Tabs */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
+.container {
+background: var(--bg-dark);
+padding: 2rem;
+border-radius: 1rem;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+width: 90%;
+max-width: 800px;
+}
 
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 16px;
-            color: var(--text-color);
-            transition: all 0.3s ease;
-        }
+.header {
+text-align: center;
+margin-bottom: 2rem;
+}
 
-        .tab.active {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            margin-bottom: -2px;
-        }
+.header h1 {
+color: var(--primary-color);
+font-size: 2rem;
+margin-bottom: 0.5rem;
+}
 
-        /* Content */
-        .tab-content {
-            display: none;
-            padding: 20px 0;
-        }
+.tabs {
+display: flex;
+gap: 1rem;
+margin-bottom: 2rem;
+}
 
-        .tab-content.active {
-            display: block;
-        }
+.tab {
+flex: 1;
+padding: 1rem;
+border: none;
+background: #333;
+color: #fff;
+cursor: pointer;
+border-radius: 0.5rem;
+transition: all 0.3s ease;
+}
 
-        /* Form elements */
-        .input-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
+.tab.active {
+background: var(--primary-color);
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
+.input-group {
+margin-bottom: 1.5rem;
+}
 
-        .input-group input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
+.input-group label {
+display: block;
+margin-bottom: 0.5rem;
+color: #ccc;
+}
 
-        .input-group label {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: all 0.3s ease;
-            pointer-events: none;
-            color: #999;
-        }
+.input-group input,
+.input-group select {
+width: 100%;
+padding: 0.8rem;
+border: 1px solid #444;
+background: #333;
+color: #fff;
+border-radius: 0.5rem;
+}
 
-        .input-group input:focus + label,
-        .input-group input:not(:placeholder-shown) + label {
-            top: -20px;
-            font-size: 14px;
-            color: var(--primary-color);
-        }
+.file-drop {
+border: 2px dashed #444;
+padding: 2rem;
+text-align: center;
+border-radius: 0.5rem;
+margin-bottom: 1.5rem;
+cursor: pointer;
+transition: all 0.3s ease;
+}
 
-        /* Buttons */
-        .button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--primary-color);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+.file-drop:hover {
+border-color: var(--primary-color);
+}
 
-        .button:hover {
-            background-color: #357abd;
-        }
+.btn {
+width: 100%;
+padding: 1rem;
+border: none;
+background: var(--primary-color);
+color: #fff;
+border-radius: 0.5rem;
+cursor: pointer;
+font-size: 1rem;
+transition: all 0.3s ease;
+}
 
-        .button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+.btn:hover {
+background: #3367d6;
+}
 
-        /* Notifications */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 5px;
-            color: white;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+.preview {
+margin-top: 1.5rem;
+padding: 1rem;
+background: #333;
+border-radius: 0.5rem;
+min-height: 200px;
+}
 
-        .notification.error {
-            background-color: var(--error-color);
-        }
+.progress {
+width: 100%;
+height: 0.5rem;
+background: #333;
+border-radius: 1rem;
+overflow: hidden;
+margin: 1rem 0;
+}
 
-        .notification.success {
-            background-color: var(--success-color);
-        }
-
-        .notification.show {
-            opacity: 1;
-        }
-    </style>
+.progress-bar {
+height: 100%;
+background: var(--primary-color);
+width: 0%;
+transition: width 0.3s ease;
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('tab-one')" id="tab-one">Single Chapter</button>
-            <button class="tab" onclick="showTab('tab-multi')" id="tab-multi">Multiple Chapters</button>
-            <button class="tab" onclick="showTab('tab-about')">About</button>
-        </div>
+<div class="container">
+<div class="header">
+<h1>Image Merger Pro</h1>
+<p>Merge and process your images easily</p>
+</div>
 
-        <div id="tab-one" class="tab-content active">
-            <div class="input-group">
-                <input type="text" id="directory-input-one" placeholder=" " onfocus="focusInput(this)" onblur="blurInput(this)">
-                <label>Directory Path</label>
-                <button class="button" onclick="selectFolder('one')">Select Folder</button>
-            </div>
-            <button class="button" id="start-button-one" onclick="start('single')">Start Processing</button>
-        </div>
+<div class="tabs">
+<button class="tab active" onclick="switchTab('merge')">Merge Images</button>
+<button class="tab" onclick="switchTab('settings')">Settings</button>
+</div>
 
-        <div id="tab-multi" class="tab-content">
-            <div class="input-group">
-                <input type="text" id="directory-input" placeholder=" " onfocus="focusInput(this)" onblur="blurInput(this)">
-                <label>Directory Path</label>
-                <button class="button" onclick="selectFolder('multi')">Select Folder</button>
-            </div>
-            <button class="button" id="start-button" onclick="start('multi')">Start Processing</button>
-        </div>
+<div id="merge-tab">
+<div class="file-drop" id="dropZone">
+<i class="material-icons">cloud_upload</i>
+<p>Drag & Drop images here or click to select</p>
+<input type="file" id="fileInput" multiple accept="image/*" style="display: none">
+</div>
 
-        <div id="tab-about" class="tab-content">
-            <h2>About Directory Manager</h2>
-            <p>This application helps you manage and process directories efficiently.</p>
-        </div>
-    </div>
+<div class="input-group">
+<label>Output Format</label>
+<select id="formatSelect">
+<option value="jpg">JPG</option>
+<option value="png">PNG</option>
+<option value="webp">WebP</option>
+</select>
+</div>
 
-    <script>
-        // All your existing JavaScript functions here
-        function showTab(tabName) {
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
+<div class="progress">
+<div class="progress-bar" id="progressBar"></div>
+</div>
 
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-        }
+<button class="btn" onclick="processImages()">Merge Images</button>
 
-        function focusInput(input) {
-            input.nextElementSibling.classList.add('focus');
-            input.placeholder = '';
-        }
+<div class="preview" id="previewArea">
+<!-- Preview will be shown here -->
+</div>
+</div>
+</div>
 
-        function blurInput(input) {
-            if (input.value === '') {
-                input.nextElementSibling.classList.remove('focus');
-                input.placeholder = ' ';
-            }
-        }
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.11.2/toastify.min.js"></script>
+<script>
+// Globals
+let selectedFiles = [];
 
-        function selectFolder(mode) {
-            // Simulated folder selection (replace with actual implementation)
-            const folderPath = 'C:\\Users\\User\\SelectedFolder';
-            if (mode === 'one') {
-                document.getElementById('directory-input-one').value = folderPath;
-            } else if (mode === 'multi') {
-                document.getElementById('directory-input').value = folderPath;
-            }
-        }
+// Event Listeners
+document.getElementById('dropZone').addEventListener('click', () => {
+document.getElementById('fileInput').click();
+});
 
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
+document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 100);
+// Setup drag and drop
+const dropZone = document.getElementById('dropZone');
 
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            }, 2000);
-        }
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+dropZone.addEventListener(eventName, preventDefaults, false);
+});
 
-        function showError(message) {
-            showNotification(message, 'error');
-        }
+function preventDefaults(e) {
+e.preventDefault();
+e.stopPropagation();
+}
 
-        function showSuccess(message) {
-            showNotification(message, 'success');
-        }
+dropZone.addEventListener('drop', handleDrop, false);
 
-        function start(mode) {
-            const inputId = mode === 'single' ? 'directory-input-one' : 'directory-input';
-            const folderAddress = document.getElementById(inputId).value;
+function handleDrop(e) {
+const dt = e.dataTransfer;
+const files = dt.files;
+handleFiles(files);
+}
 
-            if (folderAddress === '') {
-                showError("The Directory Address is required, please enter a directory address.");
-                return;
-            }
+function handleFileSelect(e) {
+handleFiles(e.target.files);
+}
 
-            // Simulated directory validation (replace with actual implementation)
-            const isValid = true;
-            if (isValid) {
-                showSuccess("Processing started successfully!");
-                disableStartButton(mode);
-                // Add your processing logic here
-                setTimeout(() => enableStartButton(mode), 3000); // Simulated processing time
-            } else {
-                showError('The Address is not valid! Please enter a valid directory address.');
-            }
-        }
+function handleFiles(files) {
+selectedFiles = [...files];
+updatePreview();
+}
 
-        function disableStartButton(mode) {
-            if (mode === 'single') {
-                document.getElementById('start-button-one').disabled = true;
-                document.getElementById('tab-multi').disabled = true;
-            } else if (mode === 'multi') {
-                document.getElementById('start-button').disabled = true;
-                document.getElementById('tab-one').disabled = true;
-            }
-        }
+function updatePreview() {
+const previewArea = document.getElementById('previewArea');
+previewArea.innerHTML = '';
 
-        function enableStartButton(mode) {
-            if (mode === 'single') {
-                document.getElementById('start-button-one').disabled = false;
-                document.getElementById('tab-multi').disabled = false;
-            } else if (mode === 'multi') {
-                document.getElementById('start-button').disabled = false;
-                document.getElementById('tab-one').disabled = false;
-            }
-        }
-    </script>
+selectedFiles.forEach(file => {
+const reader = new FileReader();
+reader.onload = (e) => {
+const img = document.createElement('img');
+img.src = e.target.result;
+img.style.maxWidth = '100px';
+img.style.margin = '5px';
+previewArea.appendChild(img);
+}
+reader.readAsDataURL(file);
+});
+}
+
+function processImages() {
+if (selectedFiles.length === 0) {
+showNotification('Please select images first', 'error');
+return;
+}
+
+// Simulate processing
+const progressBar = document.getElementById('progressBar');
+let progress = 0;
+
+const interval = setInterval(() => {
+progress += 5;
+progressBar.style.width = progress + '%';
+
+if (progress >= 100) {
+clearInterval(interval);
+showNotification('Images merged successfully!', 'success');
+progressBar.style.width = '0%';
+}
+}, 100);
+}
+
+function showNotification(message, type) {
+Toastify({
+text: message,
+duration: 3000,
+gravity: "top",
+position: "center",
+backgroundColor: type === 'error' ? "#ff5252" : "#4caf50",
+}).showToast();
+}
+
+function switchTab(tab) {
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(t => t.classList.remove('active'));
+event.target.classList.add('active');
+}
+</script>
 </body>
 </html>
-
