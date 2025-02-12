@@ -1,362 +1,285 @@
-<!DOCTYPE html><html lang="fa" dir="rtl">
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پردازشگر تصاویر</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-<style>
-:root {
---primary: #2563eb;
---primary-dark: #1d4ed8;
---background: #f8fafc;
---surface: #ffffff;
---text: #1e293b;
---border: #e2e8f0;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directory Manager</title>
+    <style>
+        /* Base styles */
+        :root {
+            --primary-color: #4a90e2;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+        }
 
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-font-family: system-ui, -apple-system, sans-serif;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
 
-body {
-background-color: var(--background);
-color: var(--text);
-line-height: 1.5;
-padding: 1rem;
-}
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
 
-.container {
-max-width: 1200px;
-margin: 0 auto;
-padding: 2rem;
-background-color: var(--surface);
-border-radius: 1rem;
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
 
-.header {
-text-align: center;
-margin-bottom: 2rem;
-}
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
 
-.form-group {
-margin-bottom: 1.5rem;
-}
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: -2px;
+        }
 
-label {
-display: block;
-margin-bottom: 0.5rem;
-font-weight: 500;
-}
+        /* Content */
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
 
-input[type="number"],
-input[type="file"],
-select {
-width: 100%;
-padding: 0.75rem;
-border: 1px solid var(--border);
-border-radius: 0.5rem;
-background-color: var(--surface);
-margin-top: 0.25rem;
-}
+        .tab-content.active {
+            display: block;
+        }
 
-.file-list {
-margin-top: 1rem;
-padding: 1rem;
-border: 1px solid var(--border);
-border-radius: 0.5rem;
-min-height: 100px;
-max-height: 300px;
-overflow-y: auto;
-}
+        /* Form elements */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
 
-.file-item {
-padding: 0.5rem;
-margin-bottom: 0.5rem;
-background-color: var(--background);
-border-radius: 0.25rem;
-}
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
 
-.button {
-display: inline-block;
-padding: 0.75rem 1.5rem;
-background-color: var(--primary);
-color: white;
-border: none;
-border-radius: 0.5rem;
-cursor: pointer;
-font-weight: 500;
-transition: background-color 0.2s;
-width: 100%;
-}
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
 
-.button:hover {
-background-color: var(--primary-dark);
-}
+        .input-group label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            color: #999;
+        }
 
-.button:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
+        .input-group input:focus + label,
+        .input-group input:not(:placeholder-shown) + label {
+            top: -20px;
+            font-size: 14px;
+            color: var(--primary-color);
+        }
 
-.progress-container {
-margin-top: 1rem;
-display: none;
-}
+        /* Buttons */
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-.progress-bar {
-width: 100%;
-height: 0.5rem;
-background-color: var(--border);
-border-radius: 0.25rem;
-overflow: hidden;
-}
+        .button:hover {
+            background-color: #357abd;
+        }
 
-.progress-fill {
-height: 100%;
-background-color: var(--primary);
-width: 0%;
-transition: width 0.3s;
-}
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
 
-.hidden {
-display: none;
-}
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-@media (min-width: 768px) {
-.form-grid {
-display: grid;
-grid-template-columns: repeat(2, 1fr);
-gap: 1rem;
-}
-}
-</style>
+        .notification.error {
+            background-color: var(--error-color);
+        }
+
+        .notification.success {
+            background-color: var(--success-color);
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-<div class="header">
-<h1>پردازشگر تصاویر</h1>
-</div>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('tab-one')" id="tab-one">Single Chapter</button>
+            <button class="tab" onclick="showTab('tab-multi')" id="tab-multi">Multiple Chapters</button>
+            <button class="tab" onclick="showTab('tab-about')">About</button>
+        </div>
 
-<div class="form-group">
-<label for="fileInput">انتخاب فایل‌ها:</label>
-<input type="file" id="fileInput" multiple accept="image/*" webkitdirectory directory>
-<div class="file-list" id="fileList"></div>
-</div>
+        <div id="tab-one" class="tab-content active">
+            <div class="input-group">
+                <input type="text" id="directory-input-one" placeholder=" " onfocus="focusInput(this)" onblur="blurInput(this)">
+                <label>Directory Path</label>
+                <button class="button" onclick="selectFolder('one')">Select Folder</button>
+            </div>
+            <button class="button" id="start-button-one" onclick="start('single')">Start Processing</button>
+        </div>
 
-<div class="form-grid">
-<div class="form-group">
-<label>
-<input type="checkbox" id="mergeCheck" checked>
-چسباندن تصاویر
-</label>
-</div>
+        <div id="tab-multi" class="tab-content">
+            <div class="input-group">
+                <input type="text" id="directory-input" placeholder=" " onfocus="focusInput(this)" onblur="blurInput(this)">
+                <label>Directory Path</label>
+                <button class="button" onclick="selectFolder('multi')">Select Folder</button>
+            </div>
+            <button class="button" id="start-button" onclick="start('multi')">Start Processing</button>
+        </div>
 
-<div class="form-group">
-<label for="format">فرمت خروجی:</label>
-<select id="format">
-<option value="webp">WebP</option>
-<option value="jpeg">JPG</option>
-<option value="png">PNG</option>
-</select>
-</div>
+        <div id="tab-about" class="tab-content">
+            <h2>About Directory Manager</h2>
+            <p>This application helps you manage and process directories efficiently.</p>
+        </div>
+    </div>
 
-<div class="form-group" id="widthGroup">
-<label for="width">عرض (پیکسل):</label>
-<input type="number" id="width" value="800" min="1">
-</div>
+    <script>
+        // All your existing JavaScript functions here
+        function showTab(tabName) {
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
 
-<div class="form-group" id="heightGroup">
-<label for="height">حداکثر طول (پیکسل):</label>
-<input type="number" id="height" value="12000" min="1">
-</div>
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
 
-<div class="form-group">
-<label for="quality">کیفیت خروجی (%):</label>
-<input type="number" id="quality" value="100" min="1" max="100">
-</div>
-</div>
+        function focusInput(input) {
+            input.nextElementSibling.classList.add('focus');
+            input.placeholder = '';
+        }
 
-<button id="processButton" class="button" disabled>شروع پردازش</button>
+        function blurInput(input) {
+            if (input.value === '') {
+                input.nextElementSibling.classList.remove('focus');
+                input.placeholder = ' ';
+            }
+        }
 
-<div class="progress-container" id="progressContainer">
-<div class="progress-bar">
-<div class="progress-fill" id="progressBar"></div>
-</div>
-<div id="progressText" style="text-align: center; margin-top: 0.5rem">0%</div>
-</div>
-</div>
+        function selectFolder(mode) {
+            // Simulated folder selection (replace with actual implementation)
+            const folderPath = 'C:\\Users\\User\\SelectedFolder';
+            if (mode === 'one') {
+                document.getElementById('directory-input-one').value = folderPath;
+            } else if (mode === 'multi') {
+                document.getElementById('directory-input').value = folderPath;
+            }
+        }
 
-<script>
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-const mergeCheck = document.getElementById('mergeCheck');
-const widthGroup = document.getElementById('widthGroup');
-const heightGroup = document.getElementById('heightGroup');
-const processButton = document.getElementById('processButton');
-const progressContainer = document.getElementById('progressContainer');
-const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
 
-let selectedFiles = [];
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
 
-// Toggle dimension inputs based on merge checkbox
-mergeCheck.addEventListener('change', () => {
-widthGroup.classList.toggle('hidden', !mergeCheck.checked);
-heightGroup.classList.toggle('hidden', !mergeCheck.checked);
-});
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 2000);
+        }
 
-// Handle file selection
-fileInput.addEventListener('change', () => {
-selectedFiles = Array.from(fileInput.files).filter(file => 
-file.type.startsWith('image/'));
+        function showError(message) {
+            showNotification(message, 'error');
+        }
 
-fileList.innerHTML = '';
-selectedFiles.forEach(file => {
-const item = document.createElement('div');
-item.className = 'file-item';
-item.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
-fileList.appendChild(item);
-});
+        function showSuccess(message) {
+            showNotification(message, 'success');
+        }
 
-processButton.disabled = selectedFiles.length === 0;
-});
+        function start(mode) {
+            const inputId = mode === 'single' ? 'directory-input-one' : 'directory-input';
+            const folderAddress = document.getElementById(inputId).value;
 
-// Process images
-processButton.addEventListener('click', async () => {
-const width = parseInt(document.getElementById('width').value);
-const maxHeight = parseInt(document.getElementById('height').value);
-const quality = parseInt(document.getElementById('quality').value) / 100;
-const format = document.getElementById('format').value;
-const shouldMerge = mergeCheck.checked;
+            if (folderAddress === '') {
+                showError("The Directory Address is required, please enter a directory address.");
+                return;
+            }
 
-processButton.disabled = true;
-progressContainer.style.display = 'block';
+            // Simulated directory validation (replace with actual implementation)
+            const isValid = true;
+            if (isValid) {
+                showSuccess("Processing started successfully!");
+                disableStartButton(mode);
+                // Add your processing logic here
+                setTimeout(() => enableStartButton(mode), 3000); // Simulated processing time
+            } else {
+                showError('The Address is not valid! Please enter a valid directory address.');
+            }
+        }
 
-try {
-// Group files by directory
-const directories = {};
-selectedFiles.forEach(file => {
-const path = file.webkitRelativePath;
-const dir = path.split('/')[0];
-if (!directories[dir]) directories[dir] = [];
-directories[dir].push(file);
-});
+        function disableStartButton(mode) {
+            if (mode === 'single') {
+                document.getElementById('start-button-one').disabled = true;
+                document.getElementById('tab-multi').disabled = true;
+            } else if (mode === 'multi') {
+                document.getElementById('start-button').disabled = true;
+                document.getElementById('tab-one').disabled = true;
+            }
+        }
 
-let processed = 0;
-const totalFiles = selectedFiles.length;
-
-// Process each directory
-for (const [dirName, files] of Object.entries(directories)) {
-const zip = new JSZip();
-
-// Load all images in the directory
-const images = await Promise.all(files.map(async file => {
-const img = new Image();
-img.src = URL.createObjectURL(file);
-await new Promise(resolve => img.onload = resolve);
-return img;
-}));
-
-if (shouldMerge) {
-// Calculate dimensions after width normalization
-const normalizedHeights = images.map(img => 
-Math.round(img.height * (width / img.width)));
-const totalHeight = normalizedHeights.reduce((a, b) => a + b, 0);
-
-// Calculate number of output images needed
-const numOutputs = Math.ceil(totalHeight / maxHeight);
-const targetHeight = Math.min(maxHeight, 
-Math.ceil(totalHeight / numOutputs));
-
-// Create merged images
-let currentY = 0;
-let currentCanvas = document.createElement('canvas');
-currentCanvas.width = width;
-currentCanvas.height = targetHeight;
-let ctx = currentCanvas.getContext('2d');
-let imageIndex = 1;
-
-for (let i = 0; i < images.length; i++) {
-const img = images[i];
-const scaledHeight = normalizedHeights[i];
-
-if (currentY + scaledHeight > targetHeight) {
-// Save current canvas and start new one
-zip.file(`${imageIndex}.${format}`, 
-dataURLToBlob(currentCanvas.toDataURL(`image/${format}`, quality)));
-imageIndex++;
-
-currentCanvas = document.createElement('canvas');
-currentCanvas.width = width;
-currentCanvas.height = targetHeight;
-ctx = currentCanvas.getContext('2d');
-currentY = 0;
-}
-
-ctx.drawImage(img, 0, currentY, width, scaledHeight);
-currentY += scaledHeight;
-}
-
-// Save last canvas
-if (currentY > 0) {
-zip.file(`${imageIndex}.${format}`, 
-dataURLToBlob(currentCanvas.toDataURL(`image/${format}`, quality)));
-}
-} else {
-// Process images individually
-images.forEach((img, index) => {
-const canvas = document.createElement('canvas');
-canvas.width = img.width;
-canvas.height = img.height;
-const ctx = canvas.getContext('2d');
-ctx.drawImage(img, 0, 0);
-
-zip.file(`${index + 1}.${format}`, 
-dataURLToBlob(canvas.toDataURL(`image/${format}`, quality)));
-});
-}
-
-processed += files.length;
-const progress = (processed / totalFiles) * 100;
-progressBar.style.width = `${progress}%`;
-progressText.textContent = `${Math.round(progress)}%`;
-
-// Generate and download zip
-const zipBlob = await zip.generateAsync({ type: 'blob' });
-const link = document.createElement('a');
-link.href = URL.createObjectURL(zipBlob);
-link.download = `${dirName}.zip`;
-link.click();
-}
-
-alert('پردازش با موفقیت انجام شد!');
-} catch (error) {
-console.error(error);
-alert('خطا در پردازش تصاویر');
-}
-
-processButton.disabled = false;
-progressContainer.style.display = 'none';
-progressBar.style.width = '0%';
-progressText.textContent = '0%';
-});
-
-// Helper function to convert data URL to Blob
-function dataURLToBlob(dataURL) {
-const arr = dataURL.split(',');
-const mime = arr[0].match(/:(.*?);/)[1];
-const bstr = atob(arr[1]);
-let n = bstr.length;
-const u8arr = new Uint8Array(n);
-while (n--) {
-u8arr[n] = bstr.charCodeAt(n);
-}
-return new Blob([u8arr], { type: mime });
-}
-</script>
+        function enableStartButton(mode) {
+            if (mode === 'single') {
+                document.getElementById('start-button-one').disabled = false;
+                document.getElementById('tab-multi').disabled = false;
+            } else if (mode === 'multi') {
+                document.getElementById('start-button').disabled = false;
+                document.getElementById('tab-one').disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
+
