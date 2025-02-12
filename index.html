@@ -54,12 +54,6 @@ border-radius: 0.5rem;
 font-size: 1rem;
 }
 
-.checkbox-group {
-display: flex;
-align-items: center;
-gap: 0.5rem;
-}
-
 button {
 background: var(--primary);
 color: white;
@@ -90,31 +84,6 @@ max-height: 300px;
 overflow-y: auto;
 }
 
-.folder {
-margin-bottom: 1rem;
-}
-
-.folder-name {
-font-weight: 600;
-margin-bottom: 0.5rem;
-}
-
-.file-item {
-padding-right: 1rem;
-margin-bottom: 0.25rem;
-display: flex;
-align-items: center;
-}
-
-.file-item::before {
-content: "├── ";
-color: #666;
-}
-
-.file-item:last-child::before {
-content: "└── ";
-}
-
 .progress {
 margin-top: 1rem;
 height: 0.5rem;
@@ -136,10 +105,6 @@ margin-top: 1rem;
 text-align: center;
 color: #666;
 }
-
-.hidden {
-display: none;
-}
 </style>
 </head>
 <body>
@@ -151,21 +116,14 @@ display: none;
 
 <div class="file-list" id="fileList"></div>
 
-<div class="form-group checkbox-group">
-<input type="checkbox" id="mergeToggle" checked>
-<label for="mergeToggle">چسباندن تصاویر</label>
-</div>
-
-<div id="dimensionControls">
 <div class="form-group">
 <label>عرض (پیکسل)</label>
-<input type="number" id="widthInput" value="800" min="1">
+<input type="number" id="widthInput" value="800" min="1" max="10000">
 </div>
 
 <div class="form-group">
 <label>حداکثر طول (پیکسل)</label>
-<input type="number" id="maxHeightInput" value="14000" min="1">
-</div>
+<input type="number" id="maxHeightInput" value="14000" min="1" max="20000">
 </div>
 
 <div class="form-group">
@@ -194,8 +152,6 @@ display: none;
 <script>
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
-const mergeToggle = document.getElementById('mergeToggle');
-const dimensionControls = document.getElementById('dimensionControls');
 const widthInput = document.getElementById('widthInput');
 const maxHeightInput = document.getElementById('maxHeightInput');
 const formatSelect = document.getElementById('formatSelect');
@@ -208,10 +164,6 @@ const statusText = document.getElementById('statusText');
 
 let files = new Map();
 
-mergeToggle.addEventListener('change', () => {
-dimensionControls.classList.toggle('hidden', !mergeToggle.checked);
-});
-
 qualityInput.addEventListener('input', () => {
 qualityValue.textContent = qualityInput.value;
 });
@@ -222,6 +174,7 @@ fileList.innerHTML = '';
 
 Array.from(fileInput.files)
 .filter(file => file.type.startsWith('image/'))
+.sort((a, b) => a.name.localeCompare(b.name))
 .forEach(file => {
 const folderPath = file.webkitRelativePath.split('/')[0];
 if (!files.has(folderPath)) {
@@ -230,166 +183,200 @@ files.set(folderPath, []);
 files.get(folderPath).push(file);
 });
 
+updateFileList();
+});
+
+function updateFileList() {
+fileList.innerHTML = '';
 files.forEach((folderFiles, folderName) => {
-const folderDiv = document.createElement('div');
-folderDiv.className = 'folder';
-
-const folderNameDiv = document.createElement('div');
-folderNameDiv.className = 'folder-name';
-folderNameDiv.textContent = folderName + '/';
-folderDiv.appendChild(folderNameDiv);
-
-folderFiles.forEach(file => {
-const fileDiv = document.createElement('div');
-fileDiv.className = 'file-item';
-fileDiv.textContent = file.name;
-folderDiv.appendChild(fileDiv);
+const div = document.createElement('div');
+div.textContent = `${folderName}: ${folderFiles.length} تصویر`;
+fileList.appendChild(div);
 });
-
-fileList.appendChild(folderDiv);
-});
-});
+}
 
 function loadImage(file) {
 return new Promise((resolve, reject) => {
 const img = new Image();
+const loadTimeout = setTimeout(() => {
+img.src = '';
+reject(new Error('تایم لود عکس تموم شد'));
+}, 30000);
+
 img.onload = () => {
+clearTimeout(loadTimeout);
 resolve(img);
-URL.revokeObjectURL(img.src); // Clean up
+URL.revokeObjectURL(img.src);
 };
-img.onerror = reject;
+
+img.onerror = () => {
+clearTimeout(loadTimeout);
+reject(new Error(`لود نشد: ${file.name}`));
+URL.revokeObjectURL(img.src);
+};
+
 img.src = URL.createObjectURL(file);
 });
 }
 
 async function resizeImage(img, targetWidth) {
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
 const aspectRatio = img.width / img.height;
 const newHeight = Math.round(targetWidth / aspectRatio);
 
-const canvas = document.createElement('canvas');
 canvas.width = targetWidth;
 canvas.height = newHeight;
 
-const ctx = canvas.getContext('2d');
 ctx.drawImage(img, 0, 0, targetWidth, newHeight);
-
 return canvas;
 }
 
-async function processImagesSequentially() {
+async function processImages() {
 if (files.size === 0) {
 alert('لطفاً ابتدا فایل‌ها را انتخاب کنید.');
+return;
+}
+
+const width = parseInt(widthInput.value);
+const maxHeight = parseInt(maxHeightInput.value);
+const quality = parseInt(qualityInput.value) / 100;
+const format = formatSelect.value;
+
+if (width <= 0 || width > 10000) {
+alert('عرض باید بین 1 تا 10000 پیکسل باشد.');
+return;
+}
+
+if (maxHeight <= 0 || maxHeight > 20000) {
+alert('حداکثر طول باید بین 1 تا 20000 پیکسل باشد.');
 return;
 }
 
 progressBar.style.display = 'block';
 processButton.disabled = true;
 
-const width = parseInt(widthInput.value);
-const maxHeight = parseInt(maxHeightInput.value);
-const quality = parseInt(qualityInput.value) / 100;
-const format = formatSelect.value;
-const shouldMerge = mergeToggle.checked;
-
 try {
 for (const [folderName, folderFiles] of files) {
 statusText.textContent = `در حال پردازش پوشه: ${folderName}`;
-const zip = new JSZip();
 
-if (shouldMerge) {
-// Process images sequentially
-const resizedCanvases = [];
+// Step 1 & 2: Resize images and calculate total height
+const resizedImages = [];
 let totalHeight = 0;
 
 for (let i = 0; i < folderFiles.length; i++) {
-statusText.textContent = `در حال بارگذاری تصویر ${i + 1} از ${folderFiles.length}`;
+const progress = (i / folderFiles.length) * 0.4;
+updateProgress(progress);
+statusText.textContent = `در حال تغییر اندازه تصویر ${i + 1} از ${folderFiles.length}`;
+
 const img = await loadImage(folderFiles[i]);
 const resizedCanvas = await resizeImage(img, width);
-resizedCanvases.push(resizedCanvas);
+resizedImages.push(resizedCanvas);
 totalHeight += resizedCanvas.height;
-updateProgress((i + 1) / folderFiles.length * 0.5);
 }
 
-// Create sections
-let currentY = 0;
-let currentSection = 1;
+// Step 3 & 4: Calculate number of output images
+const numFullSections = Math.floor(totalHeight / maxHeight);
+const remainingHeight = totalHeight % maxHeight;
 
-while (currentY < totalHeight) {
-statusText.textContent = `در حال ایجاد بخش ${currentSection}`;
+// Step 5 & 6: Create and save sections
+const zip = new JSZip();
+let currentY = 0;
+
+// Process full sections
+for (let section = 0; section < numFullSections; section++) {
+const progress = 0.4 + (section / numFullSections) * 0.6;
+updateProgress(progress);
+statusText.textContent = `در حال ایجاد بخش ${section + 1} از ${numFullSections + (remainingHeight > 0 ? 1 : 0)}`;
 
 const sectionCanvas = document.createElement('canvas');
 sectionCanvas.width = width;
-sectionCanvas.height = Math.min(maxHeight, totalHeight - currentY);
-const sectionCtx = sectionCanvas.getContext('2d');
+sectionCanvas.height = maxHeight;
+const ctx = sectionCanvas.getContext('2d');
 
 let drawY = 0;
 let processedHeight = 0;
 
-for (const canvas of resizedCanvases) {
-const imgY = currentY - processedHeight;
-if (imgY < canvas.height) {
-const drawHeight = Math.min(maxHeight - drawY, canvas.height - imgY);
+for (const canvas of resizedImages) {
+const sourceY = Math.max(0, currentY - processedHeight);
+if (sourceY < canvas.height) {
+const drawHeight = Math.min(maxHeight - drawY, canvas.height - sourceY);
 if (drawHeight > 0) {
-sectionCtx.drawImage(
+ctx.drawImage(
 canvas,
-0, imgY, width, drawHeight,
+0, sourceY, width, drawHeight,
 0, drawY, width, drawHeight
 );
 drawY += drawHeight;
 }
 }
 processedHeight += canvas.height;
-if (drawY >= maxHeight) break;
 }
 
-const sectionNumber = String(currentSection).padStart(3, '0');
+const sectionNumber = String(section + 1).padStart(3, '0');
 const blob = await new Promise(resolve => {
 sectionCanvas.toBlob(resolve, `image/${format}`, quality);
 });
 zip.file(`${sectionNumber}.${format}`, blob);
 
 currentY += maxHeight;
-currentSection++;
-updateProgress(0.5 + (currentY / totalHeight) * 0.5);
+}
+
+// Process remaining height if any
+if (remainingHeight > 0) {
+statusText.textContent = `در حال ایجاد بخش نهایی`;
+updateProgress(0.9);
+
+const sectionCanvas = document.createElement('canvas');
+sectionCanvas.width = width;
+sectionCanvas.height = remainingHeight;
+const ctx = sectionCanvas.getContext('2d');
+
+let drawY = 0;
+let processedHeight = 0;
+
+for (const canvas of resizedImages) {
+const sourceY = Math.max(0, currentY - processedHeight);
+if (sourceY < canvas.height) {
+const drawHeight = Math.min(remainingHeight - drawY, canvas.height - sourceY);
+if (drawHeight > 0) {
+ctx.drawImage(
+canvas,
+0, sourceY, width, drawHeight,
+0, drawY, width, drawHeight
+);
+drawY += drawHeight;
+}
+}
+processedHeight += canvas.height;
+}
+
+const sectionNumber = String(numFullSections + 1).padStart(3, '0');
+const blob = await new Promise(resolve => {
+sectionCanvas.toBlob(resolve, `image/${format}`, quality);
+});
+zip.file(`${sectionNumber}.${format}`, blob);
 }
 
 // Clean up
-resizedCanvases.forEach(canvas => {
+resizedImages.forEach(canvas => {
 canvas.width = 0;
 canvas.height = 0;
 });
-} else {
-// Process individual images
-for (let i = 0; i < folderFiles.length; i++) {
-statusText.textContent = `در حال پردازش تصویر ${i + 1} از ${folderFiles.length}`;
-const img = await loadImage(folderFiles[i]);
-const resizedCanvas = await resizeImage(img, width);
 
-const blob = await new Promise(resolve => {
-resizedCanvas.toBlob(resolve, `image/${format}`, quality);
-});
-
-const fileName = folderFiles[i].name.replace(/\.[^/.]+$/, '') + '.' + format;
-zip.file(fileName, blob);
-
-// Clean up
-resizedCanvas.width = 0;
-resizedCanvas.height = 0;
-
-updateProgress((i + 1) / folderFiles.length);
-}
-}
-
+// Save zip file
 statusText.textContent = 'در حال ایجاد فایل زیپ...';
+updateProgress(1);
 const zipBlob = await zip.generateAsync({ type: 'blob' });
 downloadBlob(zipBlob, `${folderName}.zip`);
 }
 
 statusText.textContent = 'پردازش با موفقیت انجام شد!';
 } catch (error) {
-console.error('Error processing images:', error);
+console.error('Error:', error);
 statusText.textContent = 'خطا در پردازش تصاویر';
-alert('خطا در پردازش تصاویر');
+alert('خطا در پردازش تصاویر: ' + error.message);
 }
 
 progressBar.style.display = 'none';
@@ -408,7 +395,7 @@ link.click();
 URL.revokeObjectURL(link.href);
 }
 
-processButton.addEventListener('click', processImagesSequentially);
+processButton.addEventListener('click', processImages);
 </script>
 </body>
 </html>
