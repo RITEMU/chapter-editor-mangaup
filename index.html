@@ -6,10 +6,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root {
---primary: #4a90e2;
---secondary: #f5f5f5;
---border: #ddd;
---text: #333;
+--primary: #3b82f6;
+--primary-hover: #2563eb;
+--bg-dark: #111827;
+--bg-card: #1f2937;
+--text: #f3f4f6;
+--text-secondary: #9ca3af;
+--border: #374151;
+--input-bg: #374151;
 }
 
 * {
@@ -20,19 +24,21 @@ font-family: Tahoma, Arial, sans-serif;
 }
 
 body {
-background-color: #f0f2f5;
+background-color: var(--bg-dark);
 color: var(--text);
 line-height: 1.6;
 padding: 20px;
+min-height: 100vh;
 }
 
 .container {
 max-width: 1200px;
 margin: 0 auto;
-background: white;
+background: var(--bg-card);
 padding: 2rem;
-border-radius: 12px;
-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+border-radius: 16px;
+box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+border: 1px solid var(--border);
 }
 
 .header {
@@ -44,51 +50,71 @@ margin-bottom: 2rem;
 color: var(--primary);
 font-size: 2rem;
 margin-bottom: 1rem;
+font-weight: bold;
 }
 
 .input-group {
 margin-bottom: 1.5rem;
-padding: 1rem;
+padding: 1.5rem;
 border: 1px solid var(--border);
-border-radius: 8px;
-background: var(--secondary);
+border-radius: 12px;
+background: var(--bg-card);
 }
 
 .input-group label {
 display: block;
 margin-bottom: 0.5rem;
 font-weight: bold;
+color: var(--text);
 }
 
 .input-group input[type="number"],
 .input-group input[type="range"],
 .input-group select {
 width: 100%;
-padding: 0.5rem;
+padding: 0.75rem;
 border: 1px solid var(--border);
-border-radius: 4px;
+border-radius: 8px;
 font-size: 1rem;
+background: var(--input-bg);
+color: var(--text);
+transition: all 0.2s ease;
+}
+
+.input-group input[type="number"]:focus,
+.input-group input[type="range"]:focus,
+.input-group select:focus {
+outline: none;
+border-color: var(--primary);
+box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .checkbox-group {
 display: flex;
 align-items: center;
-gap: 0.5rem;
+gap: 0.75rem;
 margin: 1rem 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+width: 18px;
+height: 18px;
+accent-color: var(--primary);
 }
 
 .file-drop-zone {
 border: 2px dashed var(--primary);
-padding: 2rem;
+padding: 3rem;
 text-align: center;
-border-radius: 8px;
-background: #f8f9fa;
+border-radius: 12px;
+background: var(--bg-dark);
 cursor: pointer;
 transition: all 0.3s ease;
 }
 
 .file-drop-zone:hover {
-background: #e9ecef;
+background: var(--input-bg);
+border-color: var(--primary-hover);
 }
 
 .file-list {
@@ -97,57 +123,29 @@ max-height: 300px;
 overflow-y: auto;
 padding: 1rem;
 border: 1px solid var(--border);
-border-radius: 4px;
+border-radius: 8px;
+background: var(--bg-dark);
 }
 
 .file-item {
 display: flex;
 justify-content: space-between;
 align-items: center;
-padding: 0.5rem;
+padding: 0.75rem;
 border-bottom: 1px solid var(--border);
+color: var(--text-secondary);
 }
 
-.button-group {
-display: flex;
-gap: 1rem;
-margin-top: 2rem;
-}
-
-.btn {
-padding: 0.75rem 1.5rem;
-border: none;
-border-radius: 4px;
-cursor: pointer;
-font-size: 1rem;
-transition: all 0.3s ease;
-}
-
-.btn-primary {
-background: var(--primary);
-color: white;
-}
-
-.btn-primary:hover {
-background: #357abd;
-}
-
-.btn-secondary {
-background: var(--secondary);
-color: var(--text);
-border: 1px solid var(--border);
-}
-
-.btn-secondary:hover {
-background: #e6e6e6;
+.file-item:last-child {
+border-bottom: none;
 }
 
 .progress-bar {
 width: 100%;
-height: 20px;
-background: var(--secondary);
-border-radius: 10px;
-margin: 1rem 0;
+height: 8px;
+background: var(--bg-dark);
+border-radius: 4px;
+margin: 1.5rem 0;
 overflow: hidden;
 display: none;
 }
@@ -157,6 +155,33 @@ height: 100%;
 background: var(--primary);
 width: 0%;
 transition: width 0.3s ease;
+border-radius: 4px;
+}
+
+.btn {
+padding: 0.875rem 2rem;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+font-size: 1rem;
+font-weight: 600;
+transition: all 0.2s ease;
+width: 100%;
+}
+
+.btn-primary {
+background: var(--primary);
+color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+background: var(--primary-hover);
+transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+opacity: 0.6;
+cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -164,12 +189,8 @@ transition: width 0.3s ease;
 padding: 1rem;
 }
 
-.button-group {
-flex-direction: column;
-}
-
-.btn {
-width: 100%;
+.file-drop-zone {
+padding: 2rem;
 }
 }
 </style>
@@ -183,7 +204,7 @@ width: 100%;
 <div class="input-group">
 <div class="file-drop-zone" id="dropZone">
 <p>فایل‌های خود را اینجا رها کنید یا کلیک کنید</p>
-<input type="file" id="fileInput" multiple webkitdirectory directory style="display: none">
+<input type="file" id="fileInput" multiple webkitdirectory directory style="display: none" accept=".zip,">
 </div>
 <div class="file-list" id="fileList"></div>
 </div>
@@ -226,10 +247,7 @@ width: 100%;
 <div class="progress-bar-fill" id="progressBarFill"></div>
 </div>
 
-<div class="button-group">
 <button class="btn btn-primary" id="processBtn">شروع پردازش</button>
-<button class="btn btn-secondary" id="downloadBtn" disabled>دانلود</button>
-</div>
 </div>
 
 <script>
@@ -239,7 +257,6 @@ const fileList = document.getElementById('fileList');
 const mergeImages = document.getElementById('mergeImages');
 const dimensionsGroup = document.getElementById('dimensionsGroup');
 const processBtn = document.getElementById('processBtn');
-const downloadBtn = document.getElementById('downloadBtn');
 const progressBar = document.getElementById('progressBar');
 const progressBarFill = document.getElementById('progressBarFill');
 const qualitySlider = document.getElementById('quality');
@@ -247,14 +264,13 @@ const qualityValue = document.getElementById('qualityValue');
 
 let files = [];
 
-// Event Listeners
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', (e) => {
 e.preventDefault();
-dropZone.style.background = '#e9ecef';
+dropZone.style.background = 'var(--input-bg)';
 });
 dropZone.addEventListener('dragleave', () => {
-dropZone.style.background = '#f8f9fa';
+dropZone.style.background = 'var(--bg-dark)';
 });
 dropZone.addEventListener('drop', handleDrop);
 fileInput.addEventListener('change', handleFileSelect);
@@ -264,7 +280,7 @@ processBtn.addEventListener('click', processImages);
 
 function handleDrop(e) {
 e.preventDefault();
-dropZone.style.background = '#f8f9fa';
+dropZone.style.background = 'var(--bg-dark)';
 const items = e.dataTransfer.items;
 handleFiles(items);
 }
@@ -275,12 +291,13 @@ handleFiles(items);
 }
 
 function handleFiles(items) {
-files = Array.from(items).filter(file => 
-file.type.startsWith('image/') ||
-file.webkitRelativePath.toLowerCase().endsWith('.jpg') ||
-file.webkitRelativePath.toLowerCase().endsWith('.png') ||
-file.webkitRelativePath.toLowerCase().endsWith('.webp')
-);
+files = Array.from(items).filter(file => {
+const isDirectory = file.type === '' && file.size === 0;
+const isZip = file.name.toLowerCase().endsWith('.zip');
+const isImage = file.type.startsWith('image/');
+
+return isDirectory || isZip;
+});
 
 updateFileList();
 }
@@ -317,16 +334,28 @@ return;
 processBtn.disabled = true;
 updateProgress(0);
 
-// Here would be the actual image processing logic
-// For demonstration, we'll simulate processing with a delay
-for (let i = 0; i < 100; i += 10) {
+try {
+// Simulate processing
+for (let i = 0; i <= 100; i += 10) {
 await new Promise(resolve => setTimeout(resolve, 200));
 updateProgress(i);
 }
 
-updateProgress(100);
-downloadBtn.disabled = false;
+// Simulate download after processing
+const blob = new Blob(['Processed Images'], { type: 'application/zip' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'processed_images.zip';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+} catch (error) {
+alert('خطا در پردازش تصاویر');
+} finally {
 processBtn.disabled = false;
+}
 }
 
 // Initialize
