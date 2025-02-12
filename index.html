@@ -13,7 +13,7 @@
 --bg: #1a1a1a;
 --text: #ffffff;
 --border: #333333;
---container-bg: #2d2d2d;
+--container-bg: #242424;
 }
 
 * {
@@ -21,13 +21,13 @@ margin: 0;
 padding: 0;
 box-sizing: border-box;
 font-family: system-ui, -apple-system, sans-serif;
-color: var(--text);
 }
 
 body {
 background: var(--bg);
 padding: 2rem;
 min-height: 100vh;
+color: var(--text);
 }
 
 .container {
@@ -36,7 +36,7 @@ margin: 0 auto;
 background: var(--container-bg);
 padding: 2rem;
 border-radius: 1rem;
-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 .form-group {
@@ -82,11 +82,17 @@ opacity: 0.5;
 cursor: not-allowed;
 }
 
-.folder-container {
+.folders-container {
 border: 1px solid var(--border);
 border-radius: 0.5rem;
 padding: 1rem;
-margin-bottom: 1rem;
+margin-top: 1rem;
+max-height: 400px;
+overflow-y: auto;
+}
+
+.folder {
+margin-bottom: 1.5rem;
 }
 
 .folder-name {
@@ -95,25 +101,21 @@ margin-bottom: 0.5rem;
 }
 
 .file-list {
-list-style: none;
 padding-right: 1.5rem;
 }
 
 .file-item {
-padding: 0.5rem;
-margin: 0.25rem 0;
-background: var(--bg);
-border-radius: 0.25rem;
-cursor: move;
 display: flex;
 align-items: center;
+padding: 0.25rem;
+cursor: move;
+user-select: none;
 }
 
 .file-item::before {
 content: "├── ";
 color: var(--text);
 opacity: 0.5;
-margin-left: 0.5rem;
 }
 
 .file-item:last-child::before {
@@ -139,21 +141,18 @@ transition: width 0.3s ease;
 .status {
 margin-top: 1rem;
 text-align: center;
-color: var(--text);
-opacity: 0.8;
+color: #999;
 }
 </style>
 </head>
-<!-- HTML body content remains the same, just update the file list rendering -->
 <div class="container">
 <div class="form-group">
 <label>انتخاب پوشه‌ها</label>
 <input type="file" id="fileInput" webkitdirectory directory multiple>
 </div>
 
-<div id="foldersContainer"></div>
+<div class="folders-container" id="foldersContainer"></div>
 
-<!-- Rest of the form elements remain the same -->
 <div class="form-group">
 <label>عرض (پیکسل)</label>
 <input type="number" id="widthInput" value="800" min="1" max="10000">
@@ -220,48 +219,55 @@ folders.set(folderPath, []);
 folders.get(folderPath).push(file);
 });
 
-updateFoldersList();
+updateFoldersView();
 });
 
-function updateFoldersList() {
+function updateFoldersView() {
 foldersContainer.innerHTML = '';
 
 folders.forEach((files, folderName) => {
 const folderDiv = document.createElement('div');
-folderDiv.className = 'folder-container';
+folderDiv.className = 'folder';
 
 const folderNameDiv = document.createElement('div');
 folderNameDiv.className = 'folder-name';
-folderNameDiv.textContent = `${folderName}/`;
+folderNameDiv.textContent = folderName + '/';
+folderDiv.appendChild(folderNameDiv);
 
-const fileList = document.createElement('ul');
-fileList.className = 'file-list';
+const fileListDiv = document.createElement('div');
+fileListDiv.className = 'file-list';
 
 files.forEach(file => {
-const fileItem = document.createElement('li');
+const fileItem = document.createElement('div');
 fileItem.className = 'file-item';
 fileItem.textContent = file.name;
-fileList.appendChild(fileItem);
+fileItem.dataset.path = file.webkitRelativePath;
+fileListDiv.appendChild(fileItem);
 });
 
-folderDiv.appendChild(folderNameDiv);
-folderDiv.appendChild(fileList);
+folderDiv.appendChild(fileListDiv);
 foldersContainer.appendChild(folderDiv);
 
-// Initialize Sortable for the file list
-new Sortable(fileList, {
+// Make files sortable within their folder
+new Sortable(fileListDiv, {
 animation: 150,
 onEnd: function(evt) {
 const folderFiles = folders.get(folderName);
-const movedFile = folderFiles.splice(evt.oldIndex, 1)[0];
-folderFiles.splice(evt.newIndex, 0, movedFile);
+const oldIndex = evt.oldIndex;
+const newIndex = evt.newIndex;
+
+// Update the files array
+const [movedFile] = folderFiles.splice(oldIndex, 1);
+folderFiles.splice(newIndex, 0, movedFile);
 }
 });
 });
 }
 
-// Rest of the JavaScript code remains the same
-// (loadImage, resizeImage, processImages, etc.)
+// Rest of the code remains the same...
+// (Keep all the existing functions: loadImage, resizeImage, processImages, updateProgress, downloadBlob)
+
+processButton.addEventListener('click', processImages);
 </script>
 </body>
 </html>
