@@ -76,6 +76,11 @@ button:hover {
 background: var(--primary-hover);
 }
 
+button:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
 .file-list {
 border: 1px solid var(--border);
 border-radius: 0.5rem;
@@ -99,7 +104,6 @@ padding-right: 1rem;
 margin-bottom: 0.25rem;
 display: flex;
 align-items: center;
-cursor: move;
 }
 
 .file-item::before {
@@ -125,6 +129,12 @@ height: 100%;
 background: var(--primary);
 width: 0;
 transition: width 0.3s ease;
+}
+
+.status {
+margin-top: 1rem;
+text-align: center;
+color: #666;
 }
 
 .hidden {
@@ -154,7 +164,7 @@ display: none;
 
 <div class="form-group">
 <label>حداکثر طول (پیکسل)</label>
-<input type="number" id="maxHeightInput" value="12000" min="1">
+<input type="number" id="maxHeightInput" value="14000" min="1">
 </div>
 </div>
 
@@ -177,6 +187,8 @@ display: none;
 <div class="progress" id="progressBar">
 <div class="progress-bar" id="progressBarFill"></div>
 </div>
+
+<div class="status" id="statusText"></div>
 </div>
 
 <script>
@@ -192,6 +204,7 @@ const qualityValue = document.getElementById('qualityValue');
 const processButton = document.getElementById('processButton');
 const progressBar = document.getElementById('progressBar');
 const progressBarFill = document.getElementById('progressBarFill');
+const statusText = document.getElementById('statusText');
 
 let files = new Map();
 
@@ -230,7 +243,6 @@ folderFiles.forEach(file => {
 const fileDiv = document.createElement('div');
 fileDiv.className = 'file-item';
 fileDiv.textContent = file.name;
-fileDiv.draggable = true;
 folderDiv.appendChild(fileDiv);
 });
 
@@ -238,7 +250,33 @@ fileList.appendChild(folderDiv);
 });
 });
 
-async function processImages() {
+function loadImage(file) {
+return new Promise((resolve, reject) => {
+const img = new Image();
+img.onload = () => {
+resolve(img);
+URL.revokeObjectURL(img.src); // Clean up
+};
+img.onerror = reject;
+img.src = URL.createObjectURL(file);
+});
+}
+
+async function resizeImage(img, targetWidth) {
+const aspectRatio = img.width / img.height;
+const newHeight = Math.round(targetWidth / aspectRatio);
+
+const canvas = document.createElement('canvas');
+canvas.width = targetWidth;
+canvas.height = newHeight;
+
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, targetWidth, newHeight);
+
+return canvas;
+}
+
+async function processImagesSequentially() {
 if (files.size === 0) {
 alert('لطفاً ابتدا فایل‌ها را انتخاب کنید.');
 return;
@@ -255,52 +293,52 @@ const shouldMerge = mergeToggle.checked;
 
 try {
 for (const [folderName, folderFiles] of files) {
+statusText.textContent = `در حال پردازش پوشه: ${folderName}`;
 const zip = new JSZip();
-let processedCount = 0;
 
 if (shouldMerge) {
-const images = await Promise.all(folderFiles.map(loadImage));
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+// Process images sequentially
+const resizedCanvases = [];
+let totalHeight = 0;
 
-// Resize images to specified width
-const resizedImages = images.map(img => {
-const aspectRatio = img.width / img.height;
-const newHeight = Math.round(width / aspectRatio);
+for (let i = 0; i < folderFiles.length; i++) {
+statusText.textContent = `در حال بارگذاری تصویر ${i + 1} از ${folderFiles.length}`;
+const img = await loadImage(folderFiles[i]);
+const resizedCanvas = await resizeImage(img, width);
+resizedCanvases.push(resizedCanvas);
+totalHeight += resizedCanvas.height;
+updateProgress((i + 1) / folderFiles.length * 0.5);
+}
 
-const tempCanvas = document.createElement('canvas');
-tempCanvas.width = width;
-tempCanvas.height = newHeight;
-const tempCtx = tempCanvas.getContext('2d');
-tempCtx.drawImage(img, 0, 0, width, newHeight);
-
-return tempCanvas;
-});
-
-// Calculate total height
-const totalHeight = resizedImages.reduce((sum, img) => sum + img.height, 0);
-
-// Split into sections
+// Create sections
 let currentY = 0;
 let currentSection = 1;
 
 while (currentY < totalHeight) {
+statusText.textContent = `در حال ایجاد بخش ${currentSection}`;
+
 const sectionCanvas = document.createElement('canvas');
 sectionCanvas.width = width;
 sectionCanvas.height = Math.min(maxHeight, totalHeight - currentY);
 const sectionCtx = sectionCanvas.getContext('2d');
 
 let drawY = 0;
-for (const img of resizedImages) {
-const imgY = currentY - drawY;
-if (imgY < img.height) {
+let processedHeight = 0;
+
+for (const canvas of resizedCanvases) {
+const imgY = currentY - processedHeight;
+if (imgY < canvas.height) {
+const drawHeight = Math.min(maxHeight - drawY, canvas.height - imgY);
+if (drawHeight > 0) {
 sectionCtx.drawImage(
-img,
-0, imgY, width, Math.min(maxHeight, img.height - imgY),
-0, drawY, width, Math.min(maxHeight, img.height - imgY)
+canvas,
+0, imgY, width, drawHeight,
+0, drawY, width, drawHeight
 );
-drawY += Math.min(maxHeight, img.height - imgY);
+drawY += drawHeight;
 }
+}
+processedHeight += canvas.height;
 if (drawY >= maxHeight) break;
 }
 
@@ -312,50 +350,50 @@ zip.file(`${sectionNumber}.${format}`, blob);
 
 currentY += maxHeight;
 currentSection++;
-processedCount++;
-updateProgress(processedCount / Math.ceil(totalHeight / maxHeight));
+updateProgress(0.5 + (currentY / totalHeight) * 0.5);
 }
-} else {
-for (const file of folderFiles) {
-const img = await loadImage(file);
-const canvas = document.createElement('canvas');
-canvas.width = width;
-canvas.height = Math.round(width * (img.height / img.width));
 
-const ctx = canvas.getContext('2d');
-ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+// Clean up
+resizedCanvases.forEach(canvas => {
+canvas.width = 0;
+canvas.height = 0;
+});
+} else {
+// Process individual images
+for (let i = 0; i < folderFiles.length; i++) {
+statusText.textContent = `در حال پردازش تصویر ${i + 1} از ${folderFiles.length}`;
+const img = await loadImage(folderFiles[i]);
+const resizedCanvas = await resizeImage(img, width);
 
 const blob = await new Promise(resolve => {
-canvas.toBlob(resolve, `image/${format}`, quality);
+resizedCanvas.toBlob(resolve, `image/${format}`, quality);
 });
 
-const fileName = file.name.replace(/\.[^/.]+$/, '') + '.' + format;
+const fileName = folderFiles[i].name.replace(/\.[^/.]+$/, '') + '.' + format;
 zip.file(fileName, blob);
 
-processedCount++;
-updateProgress(processedCount / folderFiles.length);
+// Clean up
+resizedCanvas.width = 0;
+resizedCanvas.height = 0;
+
+updateProgress((i + 1) / folderFiles.length);
 }
 }
 
+statusText.textContent = 'در حال ایجاد فایل زیپ...';
 const zipBlob = await zip.generateAsync({ type: 'blob' });
 downloadBlob(zipBlob, `${folderName}.zip`);
 }
+
+statusText.textContent = 'پردازش با موفقیت انجام شد!';
 } catch (error) {
 console.error('Error processing images:', error);
+statusText.textContent = 'خطا در پردازش تصاویر';
 alert('خطا در پردازش تصاویر');
 }
 
 progressBar.style.display = 'none';
 processButton.disabled = false;
-}
-
-function loadImage(file) {
-return new Promise((resolve, reject) => {
-const img = new Image();
-img.onload = () => resolve(img);
-img.onerror = reject;
-img.src = URL.createObjectURL(file);
-});
 }
 
 function updateProgress(ratio) {
@@ -370,7 +408,7 @@ link.click();
 URL.revokeObjectURL(link.href);
 }
 
-processButton.addEventListener('click', processImages);
+processButton.addEventListener('click', processImagesSequentially);
 </script>
 </body>
 </html>
