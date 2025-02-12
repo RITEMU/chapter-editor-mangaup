@@ -6,361 +6,263 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root {
---primary: #3b82f6;
---primary-hover: #2563eb;
---bg-dark: #111827;
---bg-card: #1f2937;
---text: #f3f4f6;
---text-secondary: #9ca3af;
---border: #374151;
---input-bg: #374151;
+--primary-color: #4a90e2;
+--secondary-color: #f5f5f5;
+--border-color: #ddd;
 }
 
 * {
 box-sizing: border-box;
 margin: 0;
 padding: 0;
-font-family: Tahoma, Arial, sans-serif;
+font-family: system-ui, -apple-system, sans-serif;
 }
 
 body {
-background-color: var(--bg-dark);
-color: var(--text);
-line-height: 1.6;
-padding: 20px;
-min-height: 100vh;
+background-color: #f0f2f5;
+padding: 2rem;
+direction: rtl;
 }
 
 .container {
-max-width: 1200px;
+max-width: 800px;
 margin: 0 auto;
-background: var(--bg-card);
+background: white;
 padding: 2rem;
-border-radius: 16px;
-box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-border: 1px solid var(--border);
-}
-
-.header {
-text-align: center;
-margin-bottom: 2rem;
-}
-
-.header h1 {
-color: var(--primary);
-font-size: 2rem;
-margin-bottom: 1rem;
-font-weight: bold;
-}
-
-.input-group {
-margin-bottom: 1.5rem;
-padding: 1.5rem;
-border: 1px solid var(--border);
 border-radius: 12px;
-background: var(--bg-card);
+box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.input-group label {
+h1 {
+color: #333;
+margin-bottom: 2rem;
+text-align: center;
+}
+
+.form-group {
+margin-bottom: 1.5rem;
+}
+
+label {
 display: block;
 margin-bottom: 0.5rem;
-font-weight: bold;
-color: var(--text);
+color: #555;
+font-weight: 500;
 }
 
-.input-group input[type="number"],
-.input-group input[type="range"],
-.input-group select {
+input[type="number"],
+input[type="file"],
+select {
 width: 100%;
 padding: 0.75rem;
-border: 1px solid var(--border);
-border-radius: 8px;
+border: 1px solid var(--border-color);
+border-radius: 6px;
 font-size: 1rem;
-background: var(--input-bg);
-color: var(--text);
-transition: all 0.2s ease;
 }
 
-.input-group input[type="number"]:focus,
-.input-group input[type="range"]:focus,
-.input-group select:focus {
-outline: none;
-border-color: var(--primary);
-box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.checkbox-group {
-display: flex;
-align-items: center;
-gap: 0.75rem;
-margin: 1rem 0;
-}
-
-.checkbox-group input[type="checkbox"] {
-width: 18px;
-height: 18px;
-accent-color: var(--primary);
-}
-
-.file-drop-zone {
-border: 2px dashed var(--primary);
-padding: 3rem;
-text-align: center;
-border-radius: 12px;
-background: var(--bg-dark);
-cursor: pointer;
-transition: all 0.3s ease;
-}
-
-.file-drop-zone:hover {
-background: var(--input-bg);
-border-color: var(--primary-hover);
+input[type="checkbox"] {
+margin-left: 0.5rem;
 }
 
 .file-list {
 margin: 1rem 0;
-max-height: 300px;
-overflow-y: auto;
 padding: 1rem;
-border: 1px solid var(--border);
-border-radius: 8px;
-background: var(--bg-dark);
+border: 2px dashed var(--border-color);
+border-radius: 6px;
+min-height: 100px;
 }
 
 .file-item {
+padding: 0.5rem;
+margin: 0.25rem 0;
+background: var(--secondary-color);
+border-radius: 4px;
 display: flex;
 justify-content: space-between;
 align-items: center;
-padding: 0.75rem;
-border-bottom: 1px solid var(--border);
-color: var(--text-secondary);
 }
 
-.file-item:last-child {
-border-bottom: none;
+button {
+background-color: var(--primary-color);
+color: white;
+border: none;
+padding: 1rem 2rem;
+border-radius: 6px;
+cursor: pointer;
+width: 100%;
+font-size: 1rem;
+font-weight: 500;
+transition: background-color 0.2s;
+}
+
+button:hover {
+background-color: #357abd;
+}
+
+.progress-container {
+margin-top: 1rem;
+display: none;
 }
 
 .progress-bar {
 width: 100%;
-height: 8px;
-background: var(--bg-dark);
-border-radius: 4px;
-margin: 1.5rem 0;
+height: 20px;
+background-color: var(--secondary-color);
+border-radius: 10px;
 overflow: hidden;
-display: none;
 }
 
-.progress-bar-fill {
-height: 100%;
-background: var(--primary);
+.progress {
 width: 0%;
-transition: width 0.3s ease;
-border-radius: 4px;
-}
-
-.btn {
-padding: 0.875rem 2rem;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-font-size: 1rem;
-font-weight: 600;
-transition: all 0.2s ease;
-width: 100%;
-}
-
-.btn-primary {
-background: var(--primary);
-color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-background: var(--primary-hover);
-transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-opacity: 0.6;
-cursor: not-allowed;
+height: 100%;
+background-color: var(--primary-color);
+transition: width 0.3s;
 }
 
 @media (max-width: 768px) {
-.container {
+body {
 padding: 1rem;
 }
 
-.file-drop-zone {
-padding: 2rem;
+.container {
+padding: 1rem;
 }
 }
 </style>
 </head>
 <body>
 <div class="container">
-<div class="header">
 <h1>پردازشگر تصویر</h1>
+
+<div class="form-group">
+<label>انتخاب فایل‌ها:</label>
+<input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.webp,.zip" webkitdirectory directory>
+<div id="fileList" class="file-list"></div>
 </div>
 
-<div class="input-group">
-<div class="file-drop-zone" id="dropZone">
-<p>فایل‌های خود را اینجا رها کنید یا کلیک کنید</p>
-<input type="file" id="fileInput" multiple webkitdirectory directory style="display: none" accept=".zip,">
-</div>
-<div class="file-list" id="fileList"></div>
-</div>
-
-<div class="input-group">
-<div class="checkbox-group">
-<input type="checkbox" id="mergeImages" checked>
-<label for="mergeImages">چسباندن تصاویر</label>
+<div class="form-group">
+<label>
+<input type="checkbox" id="mergeCheck" checked>
+چسباندن تصاویر
+</label>
 </div>
 
-<div id="dimensionsGroup">
-<div class="input-group">
-<label for="width">عرض (پیکسل)</label>
-<input type="number" id="width" value="800" min="1">
+<div id="dimensionsContainer">
+<div class="form-group">
+<label>عرض تصویر (پیکسل):</label>
+<input type="number" id="widthInput" value="800" min="1">
 </div>
 
-<div class="input-group">
-<label for="height">حداکثر طول (پیکسل)</label>
-<input type="number" id="height" value="12000" min="1">
+<div class="form-group">
+<label>حداکثر طول تصویر (پیکسل):</label>
+<input type="number" id="heightInput" value="12000" min="1">
 </div>
 </div>
 
-<div class="input-group">
-<label for="format">فرمت خروجی</label>
-<select id="format">
+<div class="form-group">
+<label>کیفیت خروجی (درصد):</label>
+<input type="number" id="qualityInput" value="100" min="1" max="100">
+</div>
+
+<div class="form-group">
+<label>فرمت خروجی:</label>
+<select id="formatSelect">
 <option value="webp">WebP</option>
 <option value="jpg">JPG</option>
 <option value="png">PNG</option>
 </select>
 </div>
 
-<div class="input-group">
-<label for="quality">کیفیت تصویر (٪)</label>
-<input type="range" id="quality" min="1" max="100" value="100">
-<span id="qualityValue">100%</span>
-</div>
-</div>
+<button id="processButton">شروع پردازش</button>
 
-<div class="progress-bar" id="progressBar">
-<div class="progress-bar-fill" id="progressBarFill"></div>
+<div class="progress-container" id="progressContainer">
+<div class="progress-bar">
+<div class="progress" id="progressBar"></div>
 </div>
-
-<button class="btn btn-primary" id="processBtn">شروع پردازش</button>
+</div>
 </div>
 
 <script>
-const dropZone = document.getElementById('dropZone');
+const mergeCheck = document.getElementById('mergeCheck');
+const dimensionsContainer = document.getElementById('dimensionsContainer');
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
-const mergeImages = document.getElementById('mergeImages');
-const dimensionsGroup = document.getElementById('dimensionsGroup');
-const processBtn = document.getElementById('processBtn');
+const processButton = document.getElementById('processButton');
+const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
-const progressBarFill = document.getElementById('progressBarFill');
-const qualitySlider = document.getElementById('quality');
-const qualityValue = document.getElementById('qualityValue');
 
-let files = [];
-
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', (e) => {
-e.preventDefault();
-dropZone.style.background = 'var(--input-bg)';
-});
-dropZone.addEventListener('dragleave', () => {
-dropZone.style.background = 'var(--bg-dark)';
-});
-dropZone.addEventListener('drop', handleDrop);
-fileInput.addEventListener('change', handleFileSelect);
-mergeImages.addEventListener('change', toggleDimensionsGroup);
-qualitySlider.addEventListener('input', updateQualityValue);
-processBtn.addEventListener('click', processImages);
-
-function handleDrop(e) {
-e.preventDefault();
-dropZone.style.background = 'var(--bg-dark)';
-const items = e.dataTransfer.items;
-handleFiles(items);
-}
-
-function handleFileSelect(e) {
-const items = e.target.files;
-handleFiles(items);
-}
-
-function handleFiles(items) {
-files = Array.from(items).filter(file => {
-const isDirectory = file.type === '' && file.size === 0;
-const isZip = file.name.toLowerCase().endsWith('.zip');
-const isImage = file.type.startsWith('image/');
-
-return isDirectory || isZip;
+// Toggle dimensions inputs visibility
+mergeCheck.addEventListener('change', () => {
+dimensionsContainer.style.display = mergeCheck.checked ? 'block' : 'none';
 });
 
-updateFileList();
-}
-
-function updateFileList() {
+// Display selected files
+fileInput.addEventListener('change', () => {
 fileList.innerHTML = '';
+const files = Array.from(fileInput.files);
+
+const chapters = {};
 files.forEach(file => {
-const fileItem = document.createElement('div');
-fileItem.className = 'file-item';
-fileItem.textContent = file.webkitRelativePath || file.name;
-fileList.appendChild(fileItem);
+const path = file.webkitRelativePath;
+const chapter = path.split('/')[0];
+
+if (!chapters[chapter]) {
+chapters[chapter] = [];
+}
+chapters[chapter].push(file);
+});
+
+for (const [chapter, files] of Object.entries(chapters)) {
+const chapterDiv = document.createElement('div');
+chapterDiv.innerHTML = `<strong>${chapter} (${files.length} فایل)</strong>`;
+fileList.appendChild(chapterDiv);
+
+files.forEach(file => {
+const fileDiv = document.createElement('div');
+fileDiv.className = 'file-item';
+fileDiv.textContent = file.name;
+fileList.appendChild(fileDiv);
 });
 }
+});
 
-function toggleDimensionsGroup() {
-dimensionsGroup.style.display = mergeImages.checked ? 'block' : 'none';
-}
-
-function updateQualityValue() {
-qualityValue.textContent = qualitySlider.value + '%';
-}
-
-function updateProgress(percent) {
-progressBar.style.display = 'block';
-progressBarFill.style.width = percent + '%';
-}
-
-async function processImages() {
+// Process button click handler
+processButton.addEventListener('click', async () => {
+const files = Array.from(fileInput.files);
 if (files.length === 0) {
-alert('لطفا ابتدا تصاویر را انتخاب کنید');
+alert('لطفا فایل‌ها را انتخاب کنید');
 return;
 }
 
-processBtn.disabled = true;
-updateProgress(0);
+progressContainer.style.display = 'block';
+processButton.disabled = true;
 
 try {
-// Simulate processing
-for (let i = 0; i <= 100; i += 10) {
-await new Promise(resolve => setTimeout(resolve, 200));
-updateProgress(i);
+// Here you would implement the actual image processing logic
+// For this example, we'll just simulate progress
+for (let i = 0; i <= 100; i++) {
+await new Promise(resolve => setTimeout(resolve, 50));
+progressBar.style.width = i + '%';
 }
 
-// Simulate download after processing
-const blob = new Blob(['Processed Images'], { type: 'application/zip' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = 'processed_images.zip';
-document.body.appendChild(a);
-a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
+// Create and download a sample ZIP file
+const zip = new JSZip();
+zip.file("README.txt", "این یک نمونه فایل زیپ است");
+
+const content = await zip.generateAsync({type: "blob"});
+const link = document.createElement('a');
+link.href = URL.createObjectURL(content);
+link.download = "output.zip";
+link.click();
+
 } catch (error) {
-alert('خطا در پردازش تصاویر');
+alert('خطا در پردازش فایل‌ها: ' + error.message);
 } finally {
-processBtn.disabled = false;
+processButton.disabled = false;
+progressContainer.style.display = 'none';
+progressBar.style.width = '0%';
 }
-}
-
-// Initialize
-toggleDimensionsGroup();
-updateQualityValue();
+});
 </script>
 </body>
 </html>
