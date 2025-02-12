@@ -2,311 +2,345 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پردازش تصاویر</title>
+<title>پردازشگر تصویر</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
-body {
+:root {
+--primary: #2563eb;
+--primary-hover: #1d4ed8;
+--bg: #f8fafc;
+--border: #e2e8f0;
+--error: #ef4444;
+--success: #22c55e;
+}
+
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
 font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+background: var(--bg);
+padding: 2rem;
+min-height: 100vh;
+}
+
+.container {
 max-width: 800px;
 margin: 0 auto;
-padding: 20px;
-background: #f5f5f5;
-}
-.container {
 background: white;
-padding: 20px;
-border-radius: 8px;
-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+padding: 2rem;
+border-radius: 1rem;
+box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
+
 .form-group {
-margin-bottom: 15px;
+margin-bottom: 1.5rem;
 }
+
 label {
 display: block;
-margin-bottom: 5px;
-font-weight: bold;
+margin-bottom: 0.5rem;
+font-weight: 500;
 }
-input[type="number"], select {
+
+input[type="number"],
+input[type="range"],
+select {
 width: 100%;
-padding: 8px;
-border: 1px solid #ddd;
-border-radius: 4px;
-margin-bottom: 10px;
+padding: 0.5rem;
+border: 1px solid var(--border);
+border-radius: 0.5rem;
+font-size: 1rem;
 }
+
+.alert {
+padding: 1rem;
+border-radius: 0.5rem;
+margin-bottom: 1rem;
+display: none;
+}
+
+.alert-error {
+background: #fef2f2;
+color: var(--error);
+border: 1px solid #fee2e2;
+}
+
+.alert-success {
+background: #f0fdf4;
+color: var(--success);
+border: 1px solid #dcfce7;
+}
+
 button {
-background: #4CAF50;
+background: var(--primary);
 color: white;
-padding: 10px 20px;
 border: none;
-border-radius: 4px;
+padding: 0.75rem 1.5rem;
+border-radius: 0.5rem;
+font-weight: 500;
 cursor: pointer;
-font-size: 16px;
+width: 100%;
+font-size: 1rem;
 }
+
 button:disabled {
-background: #cccccc;
+opacity: 0.5;
 cursor: not-allowed;
 }
+
 .progress-container {
-margin-top: 20px;
-display: none;
+margin-top: 1rem;
 }
-.progress-bar {
+
+.progress {
 width: 100%;
-height: 20px;
-background-color: #f0f0f0;
-border-radius: 10px;
+height: 0.5rem;
+background: var(--border);
+border-radius: 0.25rem;
 overflow: hidden;
 }
-.progress {
-width: 0%;
+
+.progress-bar {
 height: 100%;
-background-color: #4CAF50;
+width: 0;
+background: var(--primary);
 transition: width 0.3s ease;
 }
-.error {
-color: #ff0000;
-margin-top: 10px;
-padding: 10px;
-border: 1px solid #ff0000;
-border-radius: 4px;
-display: none;
-}
-.preview-container {
-margin-top: 20px;
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-gap: 10px;
-}
-.preview-image {
-width: 100%;
-height: 150px;
-object-fit: cover;
-border-radius: 4px;
+
+.status {
+text-align: center;
+margin-top: 0.5rem;
+font-size: 0.875rem;
 }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>پردازش تصاویر</h1>
+<h1>پردازشگر تصویر</h1>
+
+<div id="errorAlert" class="alert alert-error"></div>
+<div id="successAlert" class="alert alert-success"></div>
 
 <div class="form-group">
-<label for="fileInput">انتخاب تصاویر:</label>
-<input type="file" id="fileInput" multiple accept="image/*">
+<label>انتخاب پوشه تصاویر</label>
+<input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*">
 </div>
 
 <div class="form-group">
-<label for="width">عرض (پیکسل):</label>
-<input type="number" id="width" value="800" min="1">
-</div>
-
-<div class="form-group">
-<label for="maxHeight">حداکثر ارتفاع (پیکسل):</label>
-<input type="number" id="maxHeight" value="1200" min="1">
-</div>
-
-<div class="form-group">
-<label for="quality">کیفیت (%):</label>
-<input type="number" id="quality" value="80" min="1" max="100">
-</div>
-
-<div class="form-group">
-<label for="format">فرمت خروجی:</label>
-<select id="format">
-<option value="image/jpeg">JPEG</option>
-<option value="image/png">PNG</option>
-<option value="image/webp">WebP</option>
+<label>فرمت خروجی</label>
+<select id="formatSelect">
+<option value="webp">WebP</option>
+<option value="jpeg">JPEG</option>
+<option value="png">PNG</option>
 </select>
 </div>
 
 <div class="form-group">
-<label>
-<input type="checkbox" id="mergeToggle">
-ادغام تصاویر در یک فایل ZIP
-</label>
+<label>کیفیت تصویر</label>
+<input type="range" id="qualityInput" min="1" max="100" value="80">
+<span id="qualityValue">80%</span>
 </div>
 
-<button id="processButton">پردازش تصاویر</button>
-
-<div class="progress-container" id="progressContainer">
-<div class="progress-bar">
-<div class="progress" id="progress"></div>
-</div>
-<div id="progressText">۰٪</div>
+<div class="form-group">
+<label>عرض تصویر (پیکسل)</label>
+<input type="number" id="widthInput" min="1" placeholder="اختیاری">
 </div>
 
-<div class="error" id="errorMessage"></div>
+<div class="form-group">
+<label>حداکثر ارتفاع تصویر (پیکسل)</label>
+<input type="number" id="maxHeightInput" min="1" placeholder="اختیاری">
+</div>
 
-<div class="preview-container" id="previewContainer"></div>
+<button id="processButton" disabled>پردازش تصاویر</button>
+
+<div class="progress-container" style="display: none;">
+<div class="progress">
+<div class="progress-bar"></div>
+</div>
+<div class="status"></div>
+</div>
 </div>
 
 <script>
-const fileInput = document.getElementById('fileInput');
-const widthInput = document.getElementById('width');
-const maxHeightInput = document.getElementById('maxHeight');
-const qualityInput = document.getElementById('quality');
-const formatSelect = document.getElementById('format');
-const mergeToggle = document.getElementById('mergeToggle');
-const processButton = document.getElementById('processButton');
-const progressContainer = document.getElementById('progressContainer');
-const progress = document.getElementById('progress');
-const progressText = document.getElementById('progressText');
-const errorMessage = document.getElementById('errorMessage');
-const previewContainer = document.getElementById('previewContainer');
+class ImageProcessor {
+constructor() {
+this.initializeElements();
+this.setupEventListeners();
+this.files = [];
+this.processing = false;
+}
 
-let files = new Map();
+initializeElements() {
+this.fileInput = document.getElementById('fileInput');
+this.formatSelect = document.getElementById('formatSelect');
+this.qualityInput = document.getElementById('qualityInput');
+this.qualityValue = document.getElementById('qualityValue');
+this.widthInput = document.getElementById('widthInput');
+this.maxHeightInput = document.getElementById('maxHeightInput');
+this.processButton = document.getElementById('processButton');
+this.progressContainer = document.querySelector('.progress-container');
+this.progressBar = document.querySelector('.progress-bar');
+this.status = document.querySelector('.status');
+this.errorAlert = document.getElementById('errorAlert');
+this.successAlert = document.getElementById('successAlert');
+}
 
-function showError(message) {
-errorMessage.textContent = message;
-errorMessage.style.display = 'block';
+setupEventListeners() {
+this.fileInput.addEventListener('change', () => this.handleFileSelect());
+this.qualityInput.addEventListener('input', () => this.updateQualityValue());
+this.processButton.addEventListener('click', () => this.startProcessing());
+}
+
+showError(message) {
+this.errorAlert.textContent = message;
+this.errorAlert.style.display = 'block';
 setTimeout(() => {
-errorMessage.style.display = 'none';
+this.errorAlert.style.display = 'none';
 }, 5000);
 }
 
-function updateProgress(percent) {
-progress.style.width = `${percent}%`;
-progressText.textContent = `${percent}٪`;
+showSuccess(message) {
+this.successAlert.textContent = message;
+this.successAlert.style.display = 'block';
+setTimeout(() => {
+this.successAlert.style.display = 'none';
+}, 5000);
 }
 
-fileInput.addEventListener('change', () => {
-files.clear();
-previewContainer.innerHTML = '';
+handleFileSelect() {
+try {
+this.files = Array.from(this.fileInput.files).filter(file => 
+file.type.startsWith('image/')
+);
 
-if (fileInput.files.length === 0) {
+if (this.files.length === 0) {
+this.showError('لطفاً حداقل یک تصویر انتخاب کنید.');
+this.processButton.disabled = true;
 return;
 }
 
-files.set('default', Array.from(fileInput.files));
-
-// Show preview images
-files.get('default').forEach(file => {
-if (!file.type.startsWith('image/')) {
-showError(`فایل "${file.name}" یک تصویر معتبر نیست.`);
-return;
+this.processButton.disabled = false;
+this.showSuccess(`${this.files.length} تصویر انتخاب شد.`);
+} catch (error) {
+this.showError('خطا در انتخاب فایل‌ها: ' + error.message);
+}
 }
 
-const reader = new FileReader();
-reader.onload = (e) => {
-const img = document.createElement('img');
-img.src = e.target.result;
-img.className = 'preview-image';
-previewContainer.appendChild(img);
-};
-reader.readAsDataURL(file);
-});
-});
+updateQualityValue() {
+this.qualityValue.textContent = `${this.qualityInput.value}%`;
+}
 
-async function processImage(file, width, maxHeight, format, quality) {
+async startProcessing() {
+if (this.processing) return;
+
+try {
+this.processing = true;
+this.processButton.disabled = true;
+this.progressContainer.style.display = 'block';
+
+const zip = new JSZip();
+let processed = 0;
+
+for (const file of this.files) {
+try {
+const processedImage = await this.processImage(file);
+zip.file(file.name, processedImage);
+
+processed++;
+const progress = (processed / this.files.length) * 100;
+this.updateProgress(progress, `پردازش ${processed} از ${this.files.length}`);
+} catch (error) {
+console.error(`خطا در پردازش ${file.name}:`, error);
+this.showError(`خطا در پردازش ${file.name}`);
+}
+}
+
+const content = await zip.generateAsync({type: 'blob'});
+this.downloadFile(content, 'processed_images.zip');
+
+this.showSuccess('پردازش با موفقیت انجام شد.');
+} catch (error) {
+this.showError('خطا در پردازش تصاویر: ' + error.message);
+} finally {
+this.processing = false;
+this.processButton.disabled = false;
+setTimeout(() => {
+this.progressContainer.style.display = 'none';
+this.updateProgress(0, '');
+}, 2000);
+}
+}
+
+async processImage(file) {
 return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = async (e) => {
+try {
 const img = new Image();
+img.src = e.target.result;
 
-img.onload = () => {
+await new Promise((res) => {
+img.onload = res;
+img.onerror = reject;
+});
+
 const canvas = document.createElement('canvas');
-let targetWidth = width;
-let targetHeight = img.height * (width / img.width);
+const ctx = canvas.getContext('2d');
 
-if (maxHeight && targetHeight > maxHeight) {
-targetHeight = maxHeight;
-targetWidth = img.width * (maxHeight / img.height);
+let width = img.width;
+let height = img.height;
+
+if (this.widthInput.value) {
+width = parseInt(this.widthInput.value);
+height = (width / img.width) * img.height;
 }
 
-canvas.width = targetWidth;
-canvas.height = targetHeight;
+if (this.maxHeightInput.value && height > parseInt(this.maxHeightInput.value)) {
+height = parseInt(this.maxHeightInput.value);
+width = (height / img.height) * img.width;
+}
 
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = true;
-ctx.imageSmoothingQuality = 'high';
-ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+canvas.width = width;
+canvas.height = height;
+ctx.drawImage(img, 0, 0, width, height);
 
 canvas.toBlob(
-(blob) => {
-if (!blob) {
-reject(new Error('خطا در تبدیل تصویر'));
-return;
-}
-resolve(blob);
-},
-format,
-quality
+(blob) => resolve(blob),
+`image/${this.formatSelect.value}`,
+parseInt(this.qualityInput.value) / 100
 );
+} catch (error) {
+reject(error);
+}
 };
-
-img.onerror = () => {
-reject(new Error(`خطا در بارگذاری تصویر "${file.name}"`));
-};
-
-const reader = new FileReader();
-reader.onload = (e) => {
-img.src = e.target.result;
-};
-reader.onerror = () => {
-reject(new Error(`خطا در خواندن فایل "${file.name}"`));
-};
+reader.onerror = reject;
 reader.readAsDataURL(file);
 });
 }
 
-processButton.addEventListener('click', async () => {
-if (files.size === 0 || files.get('default').length === 0) {
-showError('لطفاً ابتدا تصاویر را انتخاب کنید.');
-return;
+updateProgress(percent, status) {
+this.progressBar.style.width = `${percent}%`;
+this.status.textContent = status;
 }
 
-const width = parseInt(widthInput.value);
-const maxHeight = parseInt(maxHeightInput.value);
-const quality = parseInt(qualityInput.value) / 100;
-const format = formatSelect.value;
-const shouldMerge = mergeToggle.checked;
-
-if (width < 1 || maxHeight < 1 || quality < 0.01 || quality > 1) {
-showError('لطفاً مقادیر معتبر وارد کنید.');
-return;
-}
-
-progressContainer.style.display = 'block';
-processButton.disabled = true;
-let processedCount = 0;
-
-try {
-const zip = new JSZip();
-const folderFiles = files.get('default');
-const totalFiles = folderFiles.length;
-
-for (const file of folderFiles) {
-try {
-const processedBlob = await processImage(file, width, maxHeight, format, quality);
-
-if (shouldMerge) {
-const extension = format.split('/')[1];
-zip.file(`${file.name.split('.')[0]}.${extension}`, processedBlob);
-} else {
-const extension = format.split('/')[1];
-const fileName = `${file.name.split('.')[0]}.${extension}`;
-saveAs(processedBlob, fileName);
-}
-
-processedCount++;
-updateProgress(Math.round((processedCount / totalFiles) * 100));
-} catch (error) {
-console.error(`Error processing ${file.name}:`, error);
-showError(`خطا در پردازش "${file.name}": ${error.message}`);
+downloadFile(content, filename) {
+const url = URL.createObjectURL(content);
+const link = document.createElement('a');
+link.href = url;
+link.download = filename;
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+URL.revokeObjectURL(url);
 }
 }
 
-if (shouldMerge && processedCount > 0) {
-const zipBlob = await zip.generateAsync({ type: 'blob' });
-saveAs(zipBlob, 'processed-images.zip');
-}
-} catch (error) {
-console.error('Error:', error);
-showError(`خطا: ${error.message}`);
-} finally {
-progressContainer.style.display = 'none';
-processButton.disabled = false;
-updateProgress(0);
-}
-});
+// Initialize the application
+const processor = new ImageProcessor();
 </script>
 </body>
 </html>
