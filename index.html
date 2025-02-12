@@ -4,11 +4,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>پردازش تصاویر</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
 body {
-font-family: Tahoma, Arial;
+font-family: system-ui, -apple-system, sans-serif;
 max-width: 800px;
-margin: 20px auto;
+margin: 0 auto;
 padding: 20px;
 background: #f5f5f5;
 }
@@ -26,18 +27,12 @@ display: block;
 margin-bottom: 5px;
 font-weight: bold;
 }
-input[type="number"], input[type="range"] {
+input[type="number"], select {
 width: 100%;
 padding: 8px;
+border: 1px solid #ddd;
+border-radius: 4px;
 margin-bottom: 10px;
-border: 1px solid #ddd;
-border-radius: 4px;
-}
-select {
-width: 100%;
-padding: 8px;
-border: 1px solid #ddd;
-border-radius: 4px;
 }
 button {
 background: #4CAF50;
@@ -46,38 +41,48 @@ padding: 10px 20px;
 border: none;
 border-radius: 4px;
 cursor: pointer;
+font-size: 16px;
 }
-button:hover {
-background: #45a049;
+button:disabled {
+background: #cccccc;
+cursor: not-allowed;
 }
-.progress {
-width: 100%;
-height: 20px;
-background: #f0f0f0;
-border-radius: 10px;
-overflow: hidden;
-margin: 10px 0;
+.progress-container {
+margin-top: 20px;
+display: none;
 }
 .progress-bar {
+width: 100%;
+height: 20px;
+background-color: #f0f0f0;
+border-radius: 10px;
+overflow: hidden;
+}
+.progress {
 width: 0%;
 height: 100%;
-background: #4CAF50;
+background-color: #4CAF50;
 transition: width 0.3s ease;
 }
-#preview {
-display: flex;
-flex-wrap: wrap;
-gap: 10px;
+.error {
+color: #ff0000;
+margin-top: 10px;
+padding: 10px;
+border: 1px solid #ff0000;
+border-radius: 4px;
+display: none;
+}
+.preview-container {
 margin-top: 20px;
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+gap: 10px;
 }
 .preview-image {
-max-width: 150px;
-max-height: 150px;
-object-fit: contain;
-}
-#error-message {
-color: red;
-margin: 10px 0;
+width: 100%;
+height: 150px;
+object-fit: cover;
+border-radius: 4px;
 }
 </style>
 </head>
@@ -86,163 +91,222 @@ margin: 10px 0;
 <h1>پردازش تصاویر</h1>
 
 <div class="form-group">
-<label>انتخاب تصاویر:</label>
-<input type="file" id="imageInput" multiple accept="image/*">
+<label for="fileInput">انتخاب تصاویر:</label>
+<input type="file" id="fileInput" multiple accept="image/*">
 </div>
 
 <div class="form-group">
-<label>عرض تصویر (پیکسل):</label>
+<label for="width">عرض (پیکسل):</label>
 <input type="number" id="width" value="800" min="1">
 </div>
 
 <div class="form-group">
-<label>حداکثر ارتفاع (پیکسل):</label>
+<label for="maxHeight">حداکثر ارتفاع (پیکسل):</label>
 <input type="number" id="maxHeight" value="1200" min="1">
 </div>
 
 <div class="form-group">
-<label>فرمت خروجی:</label>
+<label for="quality">کیفیت (%):</label>
+<input type="number" id="quality" value="80" min="1" max="100">
+</div>
+
+<div class="form-group">
+<label for="format">فرمت خروجی:</label>
 <select id="format">
-<option value="image/webp">WebP</option>
 <option value="image/jpeg">JPEG</option>
 <option value="image/png">PNG</option>
+<option value="image/webp">WebP</option>
 </select>
 </div>
 
 <div class="form-group">
-<label>کیفیت (1-100):</label>
-<input type="range" id="quality" min="1" max="100" value="80">
-<span id="qualityValue">80</span>
+<label>
+<input type="checkbox" id="mergeToggle">
+ادغام تصاویر در یک فایل ZIP
+</label>
 </div>
 
-<button onclick="processImages()">پردازش و دانلود</button>
+<button id="processButton">پردازش تصاویر</button>
 
-<div id="error-message"></div>
-<div class="progress">
-<div class="progress-bar" id="progressBar"></div>
+<div class="progress-container" id="progressContainer">
+<div class="progress-bar">
+<div class="progress" id="progress"></div>
+</div>
+<div id="progressText">۰٪</div>
 </div>
 
-<div id="preview"></div>
+<div class="error" id="errorMessage"></div>
+
+<div class="preview-container" id="previewContainer"></div>
 </div>
 
 <script>
-const showError = (message) => {
-document.getElementById('error-message').textContent = message;
-};
+const fileInput = document.getElementById('fileInput');
+const widthInput = document.getElementById('width');
+const maxHeightInput = document.getElementById('maxHeight');
+const qualityInput = document.getElementById('quality');
+const formatSelect = document.getElementById('format');
+const mergeToggle = document.getElementById('mergeToggle');
+const processButton = document.getElementById('processButton');
+const progressContainer = document.getElementById('progressContainer');
+const progress = document.getElementById('progress');
+const progressText = document.getElementById('progressText');
+const errorMessage = document.getElementById('errorMessage');
+const previewContainer = document.getElementById('previewContainer');
 
-const updateProgress = (percent) => {
-document.getElementById('progressBar').style.width = percent + '%';
-};
+let files = new Map();
 
-const loadImage = (file) => {
-return new Promise((resolve, reject) => {
+function showError(message) {
+errorMessage.textContent = message;
+errorMessage.style.display = 'block';
+setTimeout(() => {
+errorMessage.style.display = 'none';
+}, 5000);
+}
+
+function updateProgress(percent) {
+progress.style.width = `${percent}%`;
+progressText.textContent = `${percent}٪`;
+}
+
+fileInput.addEventListener('change', () => {
+files.clear();
+previewContainer.innerHTML = '';
+
+if (fileInput.files.length === 0) {
+return;
+}
+
+files.set('default', Array.from(fileInput.files));
+
+// Show preview images
+files.get('default').forEach(file => {
+if (!file.type.startsWith('image/')) {
+showError(`فایل "${file.name}" یک تصویر معتبر نیست.`);
+return;
+}
+
 const reader = new FileReader();
 reader.onload = (e) => {
-const img = new Image();
-img.onload = () => resolve(img);
-img.onerror = () => reject(new Error('خطا در بارگذاری تصویر'));
+const img = document.createElement('img');
 img.src = e.target.result;
+img.className = 'preview-image';
+previewContainer.appendChild(img);
 };
-reader.onerror = () => reject(new Error('خطا در خواندن فایل'));
 reader.readAsDataURL(file);
 });
-};
+});
 
-const processImage = (img, width, maxHeight, format, quality) => {
-return new Promise((resolve) => {
+async function processImage(file, width, maxHeight, format, quality) {
+return new Promise((resolve, reject) => {
+const img = new Image();
+
+img.onload = () => {
 const canvas = document.createElement('canvas');
-let newWidth = width;
-let newHeight = (img.height * width) / img.width;
+let targetWidth = width;
+let targetHeight = img.height * (width / img.width);
 
-if (newHeight > maxHeight) {
-newHeight = maxHeight;
-newWidth = (img.width * maxHeight) / img.height;
+if (maxHeight && targetHeight > maxHeight) {
+targetHeight = maxHeight;
+targetWidth = img.width * (maxHeight / img.height);
 }
 
-canvas.width = newWidth;
-canvas.height = newHeight;
+canvas.width = targetWidth;
+canvas.height = targetHeight;
 
 const ctx = canvas.getContext('2d');
-ctx.fillStyle = 'white';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-ctx.drawImage(img, 0, 0, newWidth, newHeight);
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-canvas.toBlob((blob) => {
+canvas.toBlob(
+(blob) => {
+if (!blob) {
+reject(new Error('خطا در تبدیل تصویر'));
+return;
+}
 resolve(blob);
-}, format, quality / 100);
+},
+format,
+quality
+);
+};
+
+img.onerror = () => {
+reject(new Error(`خطا در بارگذاری تصویر "${file.name}"`));
+};
+
+const reader = new FileReader();
+reader.onload = (e) => {
+img.src = e.target.result;
+};
+reader.onerror = () => {
+reject(new Error(`خطا در خواندن فایل "${file.name}"`));
+};
+reader.readAsDataURL(file);
 });
-};
+}
 
-const showPreview = (img) => {
-const preview = document.getElementById('preview');
-const imgElement = document.createElement('img');
-imgElement.src = img.src;
-imgElement.className = 'preview-image';
-preview.appendChild(imgElement);
-};
-
-async function processImages() {
-const files = document.getElementById('imageInput').files;
-if (files.length === 0) {
-showError('لطفاً حداقل یک تصویر انتخاب کنید');
+processButton.addEventListener('click', async () => {
+if (files.size === 0 || files.get('default').length === 0) {
+showError('لطفاً ابتدا تصاویر را انتخاب کنید.');
 return;
 }
 
-const width = parseInt(document.getElementById('width').value);
-const maxHeight = parseInt(document.getElementById('maxHeight').value);
-const format = document.getElementById('format').value;
-const quality = parseInt(document.getElementById('quality').value);
+const width = parseInt(widthInput.value);
+const maxHeight = parseInt(maxHeightInput.value);
+const quality = parseInt(qualityInput.value) / 100;
+const format = formatSelect.value;
+const shouldMerge = mergeToggle.checked;
 
-if (!width || !maxHeight) {
-showError('لطفاً مقادیر معتبر وارد کنید');
+if (width < 1 || maxHeight < 1 || quality < 0.01 || quality > 1) {
+showError('لطفاً مقادیر معتبر وارد کنید.');
 return;
 }
 
-document.getElementById('error-message').textContent = '';
-document.getElementById('preview').innerHTML = '';
-
-const zip = new JSZip();
-const processedImages = [];
+progressContainer.style.display = 'block';
+processButton.disabled = true;
+let processedCount = 0;
 
 try {
-for (let i = 0; i < files.length; i++) {
-updateProgress((i / files.length) * 100);
+const zip = new JSZip();
+const folderFiles = files.get('default');
+const totalFiles = folderFiles.length;
 
-const img = await loadImage(files[i]);
-showPreview(img);
+for (const file of folderFiles) {
+try {
+const processedBlob = await processImage(file, width, maxHeight, format, quality);
 
-const blob = await processImage(img, width, maxHeight, format, quality);
+if (shouldMerge) {
 const extension = format.split('/')[1];
-const fileName = `image_${i + 1}.${extension}`;
-
-zip.file(fileName, blob);
-processedImages.push(fileName);
+zip.file(`${file.name.split('.')[0]}.${extension}`, processedBlob);
+} else {
+const extension = format.split('/')[1];
+const fileName = `${file.name.split('.')[0]}.${extension}`;
+saveAs(processedBlob, fileName);
 }
 
-updateProgress(100);
-
-const zipBlob = await zip.generateAsync({type: 'blob'});
-const downloadUrl = URL.createObjectURL(zipBlob);
-
-const link = document.createElement('a');
-link.href = downloadUrl;
-link.download = 'processed_images.zip';
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-
-setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-
+processedCount++;
+updateProgress(Math.round((processedCount / totalFiles) * 100));
 } catch (error) {
-showError('خطا در پردازش تصاویر: ' + error.message);
+console.error(`Error processing ${file.name}:`, error);
+showError(`خطا در پردازش "${file.name}": ${error.message}`);
+}
+}
+
+if (shouldMerge && processedCount > 0) {
+const zipBlob = await zip.generateAsync({ type: 'blob' });
+saveAs(zipBlob, 'processed-images.zip');
+}
+} catch (error) {
+console.error('Error:', error);
+showError(`خطا: ${error.message}`);
+} finally {
+progressContainer.style.display = 'none';
+processButton.disabled = false;
 updateProgress(0);
 }
-}
-
-// نمایش مقدار کیفیت
-document.getElementById('quality').oninput = function() {
-document.getElementById('qualityValue').textContent = this.value;
-};
+});
 </script>
 </body>
 </html>
