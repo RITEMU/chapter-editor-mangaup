@@ -10,8 +10,6 @@
 --primary-hover: #1d4ed8;
 --bg: #f8fafc;
 --border: #e2e8f0;
---error: #ef4444;
---success: #22c55e;
 }
 
 * {
@@ -56,23 +54,10 @@ border-radius: 0.5rem;
 font-size: 1rem;
 }
 
-.alert {
-padding: 1rem;
-border-radius: 0.5rem;
-margin-bottom: 1rem;
-display: none;
-}
-
-.alert-error {
-background: #fef2f2;
-color: var(--error);
-border: 1px solid #fee2e2;
-}
-
-.alert-success {
-background: #f0fdf4;
-color: var(--success);
-border: 1px solid #dcfce7;
+.checkbox-group {
+display: flex;
+align-items: center;
+gap: 0.5rem;
 }
 
 button {
@@ -87,47 +72,90 @@ width: 100%;
 font-size: 1rem;
 }
 
-button:disabled {
-opacity: 0.5;
-cursor: not-allowed;
+button:hover {
+background: var(--primary-hover);
 }
 
-.progress-container {
+.file-list {
+border: 1px solid var(--border);
+border-radius: 0.5rem;
+padding: 1rem;
 margin-top: 1rem;
+max-height: 300px;
+overflow-y: auto;
+}
+
+.folder {
+margin-bottom: 1rem;
+}
+
+.folder-name {
+font-weight: 600;
+margin-bottom: 0.5rem;
+}
+
+.file-item {
+padding-right: 1rem;
+margin-bottom: 0.25rem;
+display: flex;
+align-items: center;
+cursor: move;
+}
+
+.file-item::before {
+content: "├── ";
+color: #666;
+}
+
+.file-item:last-child::before {
+content: "└── ";
 }
 
 .progress {
-width: 100%;
+margin-top: 1rem;
 height: 0.5rem;
 background: var(--border);
 border-radius: 0.25rem;
 overflow: hidden;
+display: none;
 }
 
 .progress-bar {
 height: 100%;
-width: 0;
 background: var(--primary);
+width: 0;
 transition: width 0.3s ease;
 }
 
-.status {
-text-align: center;
-margin-top: 0.5rem;
-font-size: 0.875rem;
+.hidden {
+display: none;
 }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>پردازشگر تصویر</h1>
+<div class="form-group">
+<label>انتخاب فایل‌ها</label>
+<input type="file" id="fileInput" webkitdirectory directory multiple>
+</div>
 
-<div id="errorAlert" class="alert alert-error"></div>
-<div id="successAlert" class="alert alert-success"></div>
+<div class="file-list" id="fileList"></div>
+
+<div class="form-group checkbox-group">
+<input type="checkbox" id="mergeToggle" checked>
+<label for="mergeToggle">چسباندن تصاویر</label>
+</div>
+
+<div id="dimensionControls">
+<div class="form-group">
+<label>عرض (پیکسل)</label>
+<input type="number" id="widthInput" value="800" min="1">
+</div>
 
 <div class="form-group">
-<label>انتخاب پوشه تصاویر</label>
-<input type="file" id="fileInput" webkitdirectory directory multiple accept="image/*">
+<label>حداکثر طول (پیکسل)</label>
+<input type="number" id="maxHeightInput" value="12000" min="1">
+</div>
 </div>
 
 <div class="form-group">
@@ -140,207 +168,209 @@ font-size: 0.875rem;
 </div>
 
 <div class="form-group">
-<label>کیفیت تصویر</label>
-<input type="range" id="qualityInput" min="1" max="100" value="80">
-<span id="qualityValue">80%</span>
+<label>کیفیت: <span id="qualityValue">100</span>%</label>
+<input type="range" id="qualityInput" min="1" max="100" value="100">
 </div>
 
-<div class="form-group">
-<label>عرض تصویر (پیکسل)</label>
-<input type="number" id="widthInput" min="1" placeholder="اختیاری">
-</div>
+<button id="processButton">شروع پردازش</button>
 
-<div class="form-group">
-<label>حداکثر ارتفاع تصویر (پیکسل)</label>
-<input type="number" id="maxHeightInput" min="1" placeholder="اختیاری">
-</div>
-
-<button id="processButton" disabled>پردازش تصاویر</button>
-
-<div class="progress-container" style="display: none;">
-<div class="progress">
-<div class="progress-bar"></div>
-</div>
-<div class="status"></div>
+<div class="progress" id="progressBar">
+<div class="progress-bar" id="progressBarFill"></div>
 </div>
 </div>
 
 <script>
-class ImageProcessor {
-constructor() {
-this.initializeElements();
-this.setupEventListeners();
-this.files = [];
-this.processing = false;
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const mergeToggle = document.getElementById('mergeToggle');
+const dimensionControls = document.getElementById('dimensionControls');
+const widthInput = document.getElementById('widthInput');
+const maxHeightInput = document.getElementById('maxHeightInput');
+const formatSelect = document.getElementById('formatSelect');
+const qualityInput = document.getElementById('qualityInput');
+const qualityValue = document.getElementById('qualityValue');
+const processButton = document.getElementById('processButton');
+const progressBar = document.getElementById('progressBar');
+const progressBarFill = document.getElementById('progressBarFill');
+
+let files = new Map();
+
+mergeToggle.addEventListener('change', () => {
+dimensionControls.classList.toggle('hidden', !mergeToggle.checked);
+});
+
+qualityInput.addEventListener('input', () => {
+qualityValue.textContent = qualityInput.value;
+});
+
+fileInput.addEventListener('change', () => {
+files.clear();
+fileList.innerHTML = '';
+
+Array.from(fileInput.files)
+.filter(file => file.type.startsWith('image/'))
+.forEach(file => {
+const folderPath = file.webkitRelativePath.split('/')[0];
+if (!files.has(folderPath)) {
+files.set(folderPath, []);
 }
+files.get(folderPath).push(file);
+});
 
-initializeElements() {
-this.fileInput = document.getElementById('fileInput');
-this.formatSelect = document.getElementById('formatSelect');
-this.qualityInput = document.getElementById('qualityInput');
-this.qualityValue = document.getElementById('qualityValue');
-this.widthInput = document.getElementById('widthInput');
-this.maxHeightInput = document.getElementById('maxHeightInput');
-this.processButton = document.getElementById('processButton');
-this.progressContainer = document.querySelector('.progress-container');
-this.progressBar = document.querySelector('.progress-bar');
-this.status = document.querySelector('.status');
-this.errorAlert = document.getElementById('errorAlert');
-this.successAlert = document.getElementById('successAlert');
-}
+files.forEach((folderFiles, folderName) => {
+const folderDiv = document.createElement('div');
+folderDiv.className = 'folder';
 
-setupEventListeners() {
-this.fileInput.addEventListener('change', () => this.handleFileSelect());
-this.qualityInput.addEventListener('input', () => this.updateQualityValue());
-this.processButton.addEventListener('click', () => this.startProcessing());
-}
+const folderNameDiv = document.createElement('div');
+folderNameDiv.className = 'folder-name';
+folderNameDiv.textContent = folderName + '/';
+folderDiv.appendChild(folderNameDiv);
 
-showError(message) {
-this.errorAlert.textContent = message;
-this.errorAlert.style.display = 'block';
-setTimeout(() => {
-this.errorAlert.style.display = 'none';
-}, 5000);
-}
+folderFiles.forEach(file => {
+const fileDiv = document.createElement('div');
+fileDiv.className = 'file-item';
+fileDiv.textContent = file.name;
+fileDiv.draggable = true;
+folderDiv.appendChild(fileDiv);
+});
 
-showSuccess(message) {
-this.successAlert.textContent = message;
-this.successAlert.style.display = 'block';
-setTimeout(() => {
-this.successAlert.style.display = 'none';
-}, 5000);
-}
+fileList.appendChild(folderDiv);
+});
+});
 
-handleFileSelect() {
-try {
-this.files = Array.from(this.fileInput.files).filter(file => 
-file.type.startsWith('image/')
-);
-
-if (this.files.length === 0) {
-this.showError('لطفاً حداقل یک تصویر انتخاب کنید.');
-this.processButton.disabled = true;
+async function processImages() {
+if (files.size === 0) {
+alert('لطفاً ابتدا فایل‌ها را انتخاب کنید.');
 return;
 }
 
-this.processButton.disabled = false;
-this.showSuccess(`${this.files.length} تصویر انتخاب شد.`);
-} catch (error) {
-this.showError('خطا در انتخاب فایل‌ها: ' + error.message);
-}
-}
+progressBar.style.display = 'block';
+processButton.disabled = true;
 
-updateQualityValue() {
-this.qualityValue.textContent = `${this.qualityInput.value}%`;
-}
-
-async startProcessing() {
-if (this.processing) return;
+const width = parseInt(widthInput.value);
+const maxHeight = parseInt(maxHeightInput.value);
+const quality = parseInt(qualityInput.value) / 100;
+const format = formatSelect.value;
+const shouldMerge = mergeToggle.checked;
 
 try {
-this.processing = true;
-this.processButton.disabled = true;
-this.progressContainer.style.display = 'block';
-
+for (const [folderName, folderFiles] of files) {
 const zip = new JSZip();
-let processed = 0;
+let processedCount = 0;
 
-for (const file of this.files) {
-try {
-const processedImage = await this.processImage(file);
-zip.file(file.name, processedImage);
-
-processed++;
-const progress = (processed / this.files.length) * 100;
-this.updateProgress(progress, `پردازش ${processed} از ${this.files.length}`);
-} catch (error) {
-console.error(`خطا در پردازش ${file.name}:`, error);
-this.showError(`خطا در پردازش ${file.name}`);
-}
-}
-
-const content = await zip.generateAsync({type: 'blob'});
-this.downloadFile(content, 'processed_images.zip');
-
-this.showSuccess('پردازش با موفقیت انجام شد.');
-} catch (error) {
-this.showError('خطا در پردازش تصاویر: ' + error.message);
-} finally {
-this.processing = false;
-this.processButton.disabled = false;
-setTimeout(() => {
-this.progressContainer.style.display = 'none';
-this.updateProgress(0, '');
-}, 2000);
-}
-}
-
-async processImage(file) {
-return new Promise((resolve, reject) => {
-const reader = new FileReader();
-reader.onload = async (e) => {
-try {
-const img = new Image();
-img.src = e.target.result;
-
-await new Promise((res) => {
-img.onload = res;
-img.onerror = reject;
-});
-
+if (shouldMerge) {
+const images = await Promise.all(folderFiles.map(loadImage));
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
-let width = img.width;
-let height = img.height;
+// Resize images to specified width
+const resizedImages = images.map(img => {
+const aspectRatio = img.width / img.height;
+const newHeight = Math.round(width / aspectRatio);
 
-if (this.widthInput.value) {
-width = parseInt(this.widthInput.value);
-height = (width / img.width) * img.height;
-}
+const tempCanvas = document.createElement('canvas');
+tempCanvas.width = width;
+tempCanvas.height = newHeight;
+const tempCtx = tempCanvas.getContext('2d');
+tempCtx.drawImage(img, 0, 0, width, newHeight);
 
-if (this.maxHeightInput.value && height > parseInt(this.maxHeightInput.value)) {
-height = parseInt(this.maxHeightInput.value);
-width = (height / img.height) * img.width;
-}
+return tempCanvas;
+});
 
-canvas.width = width;
-canvas.height = height;
-ctx.drawImage(img, 0, 0, width, height);
+// Calculate total height
+const totalHeight = resizedImages.reduce((sum, img) => sum + img.height, 0);
 
-canvas.toBlob(
-(blob) => resolve(blob),
-`image/${this.formatSelect.value}`,
-parseInt(this.qualityInput.value) / 100
+// Split into sections
+let currentY = 0;
+let currentSection = 1;
+
+while (currentY < totalHeight) {
+const sectionCanvas = document.createElement('canvas');
+sectionCanvas.width = width;
+sectionCanvas.height = Math.min(maxHeight, totalHeight - currentY);
+const sectionCtx = sectionCanvas.getContext('2d');
+
+let drawY = 0;
+for (const img of resizedImages) {
+const imgY = currentY - drawY;
+if (imgY < img.height) {
+sectionCtx.drawImage(
+img,
+0, imgY, width, Math.min(maxHeight, img.height - imgY),
+0, drawY, width, Math.min(maxHeight, img.height - imgY)
 );
-} catch (error) {
-reject(error);
+drawY += Math.min(maxHeight, img.height - imgY);
 }
-};
-reader.onerror = reject;
-reader.readAsDataURL(file);
+if (drawY >= maxHeight) break;
+}
+
+const sectionNumber = String(currentSection).padStart(3, '0');
+const blob = await new Promise(resolve => {
+sectionCanvas.toBlob(resolve, `image/${format}`, quality);
+});
+zip.file(`${sectionNumber}.${format}`, blob);
+
+currentY += maxHeight;
+currentSection++;
+processedCount++;
+updateProgress(processedCount / Math.ceil(totalHeight / maxHeight));
+}
+} else {
+for (const file of folderFiles) {
+const img = await loadImage(file);
+const canvas = document.createElement('canvas');
+canvas.width = width;
+canvas.height = Math.round(width * (img.height / img.width));
+
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+const blob = await new Promise(resolve => {
+canvas.toBlob(resolve, `image/${format}`, quality);
+});
+
+const fileName = file.name.replace(/\.[^/.]+$/, '') + '.' + format;
+zip.file(fileName, blob);
+
+processedCount++;
+updateProgress(processedCount / folderFiles.length);
+}
+}
+
+const zipBlob = await zip.generateAsync({ type: 'blob' });
+downloadBlob(zipBlob, `${folderName}.zip`);
+}
+} catch (error) {
+console.error('Error processing images:', error);
+alert('خطا در پردازش تصاویر');
+}
+
+progressBar.style.display = 'none';
+processButton.disabled = false;
+}
+
+function loadImage(file) {
+return new Promise((resolve, reject) => {
+const img = new Image();
+img.onload = () => resolve(img);
+img.onerror = reject;
+img.src = URL.createObjectURL(file);
 });
 }
 
-updateProgress(percent, status) {
-this.progressBar.style.width = `${percent}%`;
-this.status.textContent = status;
+function updateProgress(ratio) {
+progressBarFill.style.width = `${ratio * 100}%`;
 }
 
-downloadFile(content, filename) {
-const url = URL.createObjectURL(content);
+function downloadBlob(blob, fileName) {
 const link = document.createElement('a');
-link.href = url;
-link.download = filename;
-document.body.appendChild(link);
+link.href = URL.createObjectURL(blob);
+link.download = fileName;
 link.click();
-document.body.removeChild(link);
-URL.revokeObjectURL(url);
-}
+URL.revokeObjectURL(link.href);
 }
 
-// Initialize the application
-const processor = new ImageProcessor();
+processButton.addEventListener('click', processImages);
 </script>
 </body>
 </html>
