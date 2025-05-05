@@ -264,7 +264,7 @@ self.onmessage = async (event) => {
         // ایجاد نام فایل زیپ
         // جایگزینی کاراکترهای نامعتبر در نام فایل
         const safeChapterName = chapterName.replace(/[/\\?%*:|"<>]/g, '-') || 'manga_chapter';
-        const zipFileName = `${safeChapterName}_${width}px.${format}.zip`;
+        const zipFileName = `${safeChapterName}.zip`;
 
         // ارسال Blob نهایی به Main Thread برای دانلود
         self.postMessage({
