@@ -1,0 +1,19 @@
+/* استایل‌های اضافی برای پنل درختی */
+.file-item {
+    cursor: move;
+    user-select: none;
+    padding: 5px;
+    margin: 2px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background-color: #f7fafc;
+}
+
+.file-item:hover {
+    background-color: #edf2f7;
+}
+
+/* استایل برای حالت درگ کردن */
+.dragging {
+    opacity: 0.5;
+}
