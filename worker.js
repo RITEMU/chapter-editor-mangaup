@@ -1,148 +1,84 @@
-// اضافه کردن JSZip به Worker
-importScripts('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js');
-
-// دریافت داده‌ها از رابط کاربری
 self.onmessage = async (e) => {
-    try {
-        self.postMessage({ type: 'log', message: 'دریافت داده‌ها از رابط کاربری...' });
-        const { files, width, height, quality, format, outputName } = e.data;
+    const { files, targetWidth, targetHeight, quality, format, outputName } = e.data;
+    const zip = new JSZip();
+    let remainingCanvas = null;
+    let outputIndex = 1;
 
-        // بررسی صحت داده‌های ورودی
-        if (!files || files.length === 0) {
-            throw new Error('هیچ فایلی برای پردازش دریافت نشد.');
-        }
-        if (!width || !height || width <= 0 || height <= 0) {
-            throw new Error('ابعاد تصویر نامعتبر است.');
-        }
-        if (!format || !['jpeg', 'png', 'webp'].includes(format)) {
-            throw new Error('فرمت خروجی پشتیبانی نمی‌شود.');
-        }
-        if (quality < 0 || quality > 1) {
-            throw new Error('کیفیت تصویر باید بین 0 و 1 باشد.');
+    for (let i = 0; i < files.length; i++) {
+        let img = await loadImage(files[i]);
+        img = resizeImage(img, targetWidth);
+
+        if (remainingCanvas) {
+            img = combineImages(remainingCanvas, img);
+            remainingCanvas = null;
         }
 
-        self.postMessage({ type: 'log', message: 'داده‌های ورودی با موفقیت دریافت و بررسی شدند.' });
-
-        // خواندن فایل‌ها به‌صورت ArrayBuffer
-        const images = [];
-        self.postMessage({ type: 'log', message: 'شروع بارگذاری تصاویر...' });
-        for (let i = 0; i < files.length; i++) {
-            try {
-                const file = files[i];
-                if (!file) {
-                    throw new Error(`فایل شماره ${i + 1} نامعتبر است.`);
-                }
-                self.postMessage({ type: 'log', message: `در حال بارگذاری تصویر ${file.name} (${i + 1}/${files.length})...` });
-                const bitmap = await createImageBitmap(file);
-                images.push(bitmap);
-                self.postMessage({ type: 'log', message: `تصویر ${file.name} با موفقیت بارگذاری شد (${i + 1}/${files.length}).` });
-            } catch (error) {
-                self.postMessage({ type: 'error', message: `خطا در بارگذاری تصویر شماره ${i + 1}: ${error.message}` });
-                throw new Error(`بارگذاری تصویر شماره ${i + 1} ناموفق بود.`);
-            }
+        while (img.height > targetHeight) {
+            const cropped = cropImage(img, 0, 0, img.width, targetHeight);
+            const outputData = canvasToDataUrl(cropped, format, quality);
+            zip.file(`${String(outputIndex).padStart(3, '0')}.${format}`, outputData.split(',')[1], { base64: true });
+            outputIndex++;
+            const remainingHeight = img.height - targetHeight;
+            remainingCanvas = cropImage(img, 0, targetHeight, img.width, remainingHeight);
+            img = remainingCanvas;
         }
 
-        // تغییر اندازه تصاویر
-        self.postMessage({ type: 'log', message: 'شروع تغییر اندازه تصاویر...' });
-        const resizedImages = [];
-        for (let i = 0; i < images.length; i++) {
-            try {
-                const img = images[i];
-                const canvas = new OffscreenCanvas(width, width * img.height / img.width);
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    throw new Error(`ایجاد زمینه نقاشی برای تصویر شماره ${i + 1} ناموفق بود.`);
-                }
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resizedImages.push(canvas);
-                self.postMessage({ type: 'log', message: `تصویر شماره ${i + 1} با موفقیت تغییر اندازه داده شد.` });
-            } catch (error) {
-                self.postMessage({ type: 'error', message: `خطا در تغییر اندازه تصویر شماره ${i + 1}: ${error.message}` });
-                throw new Error(`تغییر اندازه تصویر شماره ${i + 1} ناموفق بود.`);
-            }
+        if (i === files.length - 1 && img.height > 0) {
+            const outputData = canvasToDataUrl(img, format, quality);
+            zip.file(`${String(outputIndex).padStart(3, '0')}.${format}`, outputData.split(',')[1], { base64: true });
+        } else if (img.height > 0) {
+            remainingCanvas = img;
         }
-
-        // چسباندن تصاویر
-        self.postMessage({ type: 'log', message: 'شروع چسباندن تصاویر...' });
-        let totalHeight = 0;
-        try {
-            totalHeight = resizedImages.reduce((sum, img) => sum + img.height, 0);
-            if (totalHeight <= 0) {
-                throw new Error('ارتفاع کل تصاویر نامعتبر است.');
-            }
-            const combinedCanvas = new OffscreenCanvas(width, totalHeight);
-            const combinedCtx = combinedCanvas.getContext('2d');
-            if (!combinedCtx) {
-                throw new Error('ایجاد زمینه نقاشی برای تصویر ترکیبی ناموفق بود.');
-            }
-            let currentY = 0;
-            resizedImages.forEach((canvas, index) => {
-                combinedCtx.drawImage(canvas, 0, currentY);
-                currentY += canvas.height;
-                self.postMessage({ type: 'log', message: `تصویر شماره ${index + 1} به تصویر ترکیبی اضافه شد.` });
-            });
-            self.postMessage({ type: 'log', message: 'چسباندن تصاویر با موفقیت انجام شد.' });
-        } catch (error) {
-            self.postMessage({ type: 'error', message: `خطا در چسباندن تصاویر: ${error.message}` });
-            throw new Error('چسباندن تصاویر ناموفق بود.');
-        }
-
-        // برش تصاویر به ارتفاع مشخص
-        self.postMessage({ type: 'log', message: 'شروع برش تصاویر...' });
-        const outputImages = [];
-        try {
-            let startY = 0;
-            while (startY < totalHeight) {
-                const sliceHeight = Math.min(height, totalHeight - startY);
-                const sliceCanvas = new OffscreenCanvas(width, sliceHeight);
-                const sliceCtx = sliceCanvas.getContext('2d');
-                if (!sliceCtx) {
-                    throw new Error(`ایجاد زمینه نقاشی برای برش در موقعیت ${startY} ناموفق بود.`);
-                }
-                sliceCtx.drawImage(combinedCanvas, 0, startY, width, sliceHeight, 0, 0, width, sliceHeight);
-                outputImages.push(sliceCanvas);
-                self.postMessage({ type: 'log', message: `برش در موقعیت ${startY} با موفقیت انجام شد.` });
-                startY += height;
-            }
-            if (outputImages.length === 0) {
-                throw new Error('هیچ برشی ایجاد نشد.');
-            }
-            self.postMessage({ type: 'log', message: 'برش تصاویر با موفقیت به پایان رسید.' });
-        } catch (error) {
-            self.postMessage({ type: 'error', message: `خطا در برش تصاویر: ${error.message}` });
-            throw new Error('برش تصاویر ناموفق بود.');
-        }
-
-        // تبدیل به فرمت خروجی و ساخت ZIP
-        self.postMessage({ type: 'log', message: 'شروع ایجاد فایل خروجی...' });
-        try {
-            const zip = new JSZip();
-            for (let i = 0; i < outputImages.length; i++) {
-                try {
-                    const canvas = outputImages[i];
-                    const blob = await canvas.convertToBlob({ type: `image/${format}`, quality: quality });
-                    zip.file(`page_${String(i + 1).padStart(3, '0')}.${format}`, blob);
-                    self.postMessage({ type: 'log', message: `صفحه ${i + 1} به فایل ZIP اضافه شد.` });
-                } catch (error) {
-                    self.postMessage({ type: 'error', message: `خطا در تبدیل صفحه ${i + 1} به Blob: ${error.message}` });
-                    throw new Error(`تبدیل صفحه ${i + 1} ناموفق بود.`);
-                }
-            }
-
-            self.postMessage({ type: 'log', message: 'در حال تولید فایل ZIP...' });
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(zipBlob);
-            self.postMessage({ type: 'log', message: 'فایل ZIP با موفقیت تولید شد.' });
-
-            self.postMessage({
-                type: 'result',
-                data: { url: url, name: `${outputName}.zip` }
-            });
-        } catch (error) {
-            self.postMessage({ type: 'error', message: `خطا در ایجاد فایل خروجی: ${error.message}` });
-            throw new Error('ایجاد فایل خروجی ناموفق بود.');
-        }
-    } catch (error) {
-        self.postMessage({ type: 'error', message: `خطای کلی در پردازش: ${error.message}` });
     }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    self.postMessage({ zipBlob, outputName });
 };
+
+async function loadImage(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = new OffscreenCanvas(img.width, img.height);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas);
+        };
+    });
+}
+
+function resizeImage(canvas, targetWidth) {
+    if (canvas.width === targetWidth) return canvas;
+    const ratio = targetWidth / canvas.width;
+    const newHeight = Math.round(canvas.height * ratio);
+    const newCanvas = new OffscreenCanvas(targetWidth, newHeight);
+    const ctx = newCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, targetWidth, newHeight);
+    return newCanvas;
+}
+
+function combineImages(topCanvas, bottomCanvas) {
+    const newCanvas = new OffscreenCanvas(bottomCanvas.width, topCanvas.height + bottomCanvas.height);
+    const ctx = newCanvas.getContext('2d');
+    ctx.drawImage(topCanvas, 0, 0);
+    ctx.drawImage(bottomCanvas, 0, topCanvas.height);
+    return newCanvas;
+}
+
+function cropImage(canvas, x, y, width, height) {
+    const newCanvas = new OffscreenCanvas(width, height);
+    const ctx = newCanvas.getContext('2d');
+    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+    return newCanvas;
+}
+
+function canvasToDataUrl(canvas, format, quality) {
+    return canvas.convertToBlob({ type: `image/${format}`, quality }).then(blob => {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    });
+}
