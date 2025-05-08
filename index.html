@@ -3,41 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پردازش تصاویر مانهوا</title>
+    <title>چسباندن عکس‌های مانهوا</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>پردازش تصاویر مانهوا</h1>
+        <h1>چسباندن عکس‌های مانهوا</h1>
         
         <div class="input-section">
-            <label for="imageInput">آپلود تصاویر:</label>
-            <input type="file" id="imageInput" accept="image/*" multiple>
-        </div>
+            <div class="form-group">
+                <label for="imageInput">آپلود عکس‌ها:</label>
+                <input type="file" id="imageInput" accept="image/*" multiple>
+            </div>
 
-        <div class="tree-panel">
-            <h2>لیست تصاویر</h2>
-            <ul id="imageTree"></ul>
-        </div>
+            <div class="tree-section">
+                <h2>ساختار فایل‌ها</h2>
+                <ul id="fileTree" class="tree-view"></ul>
+            </div>
 
-        <div class="settings-section">
-            <div>
-                <label for="outputName">نام فایل خروجی:</label>
-                <input type="text" id="outputName" value="manhwa_output">
+            <div class="form-group">
+                <label for="outputName">نام فایل خروجی (ZIP):</label>
+                <input type="text" id="outputName"  placeholder="نام فایل خروجی">
             </div>
-            <div>
-                <label for="widthInput">عرض (پیکسل):</label>
-                <input type="number" id="widthInput" value="800" min="100">
+            
+            <div class="form-group">
+                <label for="widthInput">عرض تصویر (پیکسل):</label>
+                <input type="number" id="widthInput" value="800" min="100" max="2000">
             </div>
-            <div>
-                <label for="heightInput">ارتفاع (پیکسل):</label>
-                <input type="number" id="heightInput" value="12000" min="1000">
+            
+            <div class="form-group">
+                <label for="heightInput">ارتفاع حداکثر (پیکسل):</label>
+                <input type="number" id="heightInput" value="12000" min="1000" max="30000">
             </div>
-            <div>
-                <label for="qualityInput">کیفیت (%):</label>
-                <input type="number" id="qualityInput" value="95" min="1" max="100">
+            
+            <div class="form-group">
+                <label for="qualityInput">کیفیت خروجی (درصد):</label>
+                <input type="number" id="qualityInput" value="95" min="10" max="100">
             </div>
-            <div>
+            
+            <div class="form-group">
                 <label for="formatSelect">فرمت خروجی:</label>
                 <select id="formatSelect">
                     <option value="webp" selected>WEBP</option>
@@ -45,29 +49,24 @@
                     <option value="png">PNG</option>
                 </select>
             </div>
+            
+            <div class="button-group">
+                <button id="startBtn">شروع پردازش</button>
+                <button id="resetBtn">ریست</button>
+            </div>
         </div>
 
-        <div class="button-section">
-            <button id="startBtn">شروع پردازش</button>
-            <button id="resetBtn">ریست</button>
-        </div>
-
-        <div class="progress-section">
-            <h2>پیشرفت</h2>
+        
+        <div class="log-section">
+            <h2>لاگ و پیشرفت</h2>
             <div id="progressBar" class="progress-bar">
                 <div id="progress" class="progress"></div>
             </div>
-            <div id="progressText">0%</div>
-        </div>
-
-        <div class="log-section">
-            <h2>لاگ</h2>
-            <pre id="log"></pre>
+            <div id="progressText" class="progress-text">0%</div>
+            <div id="log" class="log-panel"></div>
         </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="utils.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
