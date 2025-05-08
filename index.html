@@ -3,58 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پردازشگر مانهوا</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>پردازش تصاویر مانهوا</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-4">
-    <h1 class="text-2xl md:text-3xl font-bold mb-6 text-gray-800">پردازشگر تصاویر مانهوا</h1>
-    <div class="container mx-auto max-w-4xl bg-white rounded-lg shadow-md p-6">
-        <!-- بخش آپلود تصاویر -->
-        <div class="mb-6">
-            <label for="imageInput" class="block text-gray-700 font-semibold mb-2">آپلود تصاویر:</label>
-            <input type="file" id="imageInput" accept="image/*" multiple class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+<body>
+    <div class="container">
+        <h1>پردازش تصاویر مانهوا</h1>
+        
+        <div class="input-section">
+            <label for="imageInput">آپلود تصاویر:</label>
+            <input type="file" id="imageInput" accept="image/*" multiple>
         </div>
-        <!-- پنل نمایش درختی تصاویر -->
-        <div class="mb-6">
-            <h2 class="text-lg font-semibold mb-2 text-gray-700">لیست تصاویر آپلود شده:</h2>
-            <div id="fileTree" class="border rounded-md p-4 bg-gray-50 h-48 overflow-y-auto"></div>
+
+        <div class="tree-panel">
+            <h2>لیست تصاویر</h2>
+            <ul id="imageTree"></ul>
         </div>
-        <!-- ورودی‌های تنظیمات -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        <div class="settings-section">
             <div>
-                <label for="outputName" class="block text-gray-700 font-semibold mb-2">نام فایل خروجی (زیپ):</label>
-                <input type="text" id="outputName" value="manhwa_output" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="outputName">نام فایل خروجی:</label>
+                <input type="text" id="outputName" value="manhwa_output">
             </div>
             <div>
-                <label for="widthInput" class="block text-gray-700 font-semibold mb-2">عرض تصویر (پیکسل):</label>
-                <input type="number" id="widthInput" value="800" min="100" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="widthInput">عرض (پیکسل):</label>
+                <input type="number" id="widthInput" value="800" min="100">
             </div>
             <div>
-                <label for="heightInput" class="block text-gray-700 font-semibold mb-2">ارتفاع حداکثر (پیکسل):</label>
-                <input type="number" id="heightInput" value="12000" min="1000" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="heightInput">ارتفاع (پیکسل):</label>
+                <input type="number" id="heightInput" value="12000" min="1000">
             </div>
             <div>
-                <label for="qualityInput" class="block text-gray-700 font-semibold mb-2">کیفیت خروجی (درصد):</label>
-                <input type="number" id="qualityInput" value="95" min="1" max="100" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="qualityInput">کیفیت (%):</label>
+                <input type="number" id="qualityInput" value="95" min="1" max="100">
             </div>
             <div>
-                <label for="formatSelect" class="block text-gray-700 font-semibold mb-2">فرمت خروجی:</label>
-                <select id="formatSelect" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="formatSelect">فرمت خروجی:</label>
+                <select id="formatSelect">
                     <option value="webp" selected>WEBP</option>
                     <option value="jpeg">JPG</option>
                     <option value="png">PNG</option>
                 </select>
             </div>
         </div>
-        <!-- دکمه‌ها -->
-        <div class="flex flex-col md:flex-row justify-center gap-4">
-            <button id="processBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>شروع پردازش</button>
-            <button id="resetBtn" class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600">ریست</button>
+
+        <div class="button-section">
+            <button id="startBtn">شروع پردازش</button>
+            <button id="resetBtn">ریست</button>
+        </div>
+
+        <div class="progress-section">
+            <h2>پیشرفت</h2>
+            <div id="progressBar" class="progress-bar">
+                <div id="progress" class="progress"></div>
+            </div>
+            <div id="progressText">0%</div>
+        </div>
+
+        <div class="log-section">
+            <h2>لاگ</h2>
+            <pre id="log"></pre>
         </div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="script.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
