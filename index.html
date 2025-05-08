@@ -3,514 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پردازشگر و تقسیم کننده عکس مانگا</title>
+    <title>مانهوا ادیتور</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* استایل‌های قبلی شما اینجا قرار می‌گیرد */
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #f4f4f4;
+        .tree-item {
+            transition: background 0.2s;
         }
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .tree-item:hover {
+            background-color: #f0f0f0;
         }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-        }
-        input[type="text"],
-        input[type="number"],
-        select,
-        input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
-        }
-        input[type="file"] {
-            padding: 5px; /* کمی ظاهر بهتر برای فایل */
-        }
-        input[type="range"] {
-            width: 85%;
-            vertical-align: middle;
-        }
-        #qualityValue {
-            display: inline-block;
-            min-width: 30px; /* فضایی برای عدد کیفیت */
-            text-align: right;
-            font-weight: bold;
-            vertical-align: middle;
-            margin-right: 5px;
-        }
-        button {
-            background-color: #5cb85c;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #4cae4c;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #progressBarContainer {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden; /* Ensures fill doesn't overflow */
-            display: none; /* Initially hidden */
-            height: 25px; /* ارتفاع مشخص برای نوار */
-            position: relative; /* برای قرارگیری متن وضعیت */
-        }
-        #progressBarFill {
-            width: 0%;
-            height: 100%; /* ارتفاع کامل */
-            background-color: #4caf50;
-            text-align: center;
-            line-height: 25px; /* تنظیم خط برای قرارگیری عمودی متن */
-            color: white;
-            border-radius: 4px 0 0 4px; /* گرد کردن گوشه چپ */
-            transition: width 0.3s ease-out;
-            /* حذف textContent از اینجا، چون در statusText است */
-        }
-         #statusText {
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: #555;
-            min-height: 1.2em; /* فضایی برای متن حتی وقتی خالی است */
-            text-align: center; /* مرکز چین کردن متن وضعیت */
-        }
-        #fileList {
-            margin-top: 15px;
-            padding: 10px;
-            border: 1px dashed #ccc;
-            border-radius: 4px;
-            max-height: 300px;
+        .log-box {
+            max-height: 200px;
             overflow-y: auto;
-            background-color: #f9f9f9;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
         }
-         #fileList ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        @media (max-width: 640px) {
+            .container {
+                padding: 10px;
+            }
+            .grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
         }
-         #fileList li {
-            padding: 8px 5px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #fileList li:last-child {
-            border-bottom: none;
-        }
-        #fileList li span {
-            flex-grow: 1;
-            margin-right: 10px;
-            word-break: break-all; /* شکستن نام‌های طولانی */
-        }
-        #fileList li button {
-            padding: 3px 6px; /* دکمه‌های کوچکتر */
-            font-size: 12px;
-            margin-left: 3px; /* فاصله بین دکمه ها */
-        }
-
     </style>
 </head>
-<body>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6">مانهوا ادیتور</h1>
 
-<div class="container">
-    <h2>پردازشگر و تقسیم کننده عکس مانگا</h2>
+        <!-- بخش آپلود فایل -->
+        <div class="mb-6">
+            <label for="fileInput" class="block text-lg font-medium text-gray-700 mb-2">آپلود تصاویر مانهوا</label>
+            <input type="file" id="fileInput" multiple accept="image/*" class="w-full p-2 border rounded">
+        </div>
 
-    <div class="form-group">
-        <label for="chapterNameInput">نام چپتر (برای نام فایل زیپ):</label>
-        <input type="text" id="chapterNameInput" placeholder="مثال: Chapter-101">
+        <!-- پنل درختی فایل‌ها -->
+        <div class="mb-6">
+            <label class="block text-lg font-medium text-gray-700 mb-2">لیست تصاویر (قابلیت جابجایی)</label>
+            <div id="treePanel" class="bg-white border rounded p-4 min-h-[150px] overflow-auto"></div>
+        </div>
+
+        <!-- تنظیمات -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div>
+                <label for="outputName" class="block text-lg font-medium text-gray-700">نام فایل خروجی (ZIP)</label>
+                <input type="text" id="outputName" value="chapter_output" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label for="widthInput" class="block text-lg font-medium text-gray-700">عرض تصویر (پیکسل)</label>
+                <input type="number" id="widthInput" value="800" min="100" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label for="heightInput" class="block text-lg font-medium text-gray-700">ارتفاع برش (پیکسل)</label>
+                <input type="number" id="heightInput" value="12000" min="1000" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label for="qualityInput" class="block text-lg font-medium text-gray-700">کیفیت خروجی (1-100)</label>
+                <input type="number" id="qualityInput" value="80" min="1" max="100" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label for="formatSelect" class="block text-lg font-medium text-gray-700">فرمت خروجی</label>
+                <select id="formatSelect" class="w-full p-2 border rounded">
+                    <option value="webp" selected>WEBP</option>
+                    <option value="jpeg">JPG</option>
+                    <option value="png">PNG</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- لاگ پیشرفت -->
+        <div class="mb-6">
+            <label class="block text-lg font-medium text-gray-700 mb-2">لاگ پیشرفت</label>
+            <div id="logBox" class="log-box"></div>
+        </div>
+
+        <!-- دکمه‌ها -->
+        <div class="flex justify-center gap-4">
+            <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">شروع عملیات</button>
+            <button id="resetBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">ریست</button>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="imageFileInput">انتخاب عکس‌ها (jpg, png, webp):</label>
-        <input type="file" id="imageFileInput" multiple accept=".jpg,.jpeg,.png,.webp">
-        <div id="fileList"><p>هنوز عکسی انتخاب نشده است.</p></div>
-    </div>
-
-    <div class="form-group">
-        <label for="widthInput">عرض مورد نظر (پیکسل):</label>
-        <input type="number" id="widthInput" value="800" min="100" max="10000">
-    </div>
-
-    <div class="form-group">
-        <label for="maxHeightInput">حداکثر طول هر بخش (پیکسل):</label>
-        <input type="number" id="maxHeightInput" value="14000" min="1000" max="20000">
-    </div>
-
-    <div class="form-group">
-        <label for="formatSelect">فرمت خروجی:</label>
-        <select id="formatSelect">
-            <option value="webp">WebP (حجم کم، کیفیت خوب)</option>
-            <option value="jpeg" selected>JPEG (سازگاری بالا)</option>
-            <option value="png">PNG (کیفیت بالا، حجم زیاد)</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label for="qualityInput">کیفیت (برای WebP و JPEG):</label>
-        <input type="range" id="qualityInput" min="10" max="100" value="90">
-        <span id="qualityValue">90</span>%
-    </div>
-
-    <button id="processButton">شروع پردازش</button>
-
-    <div id="progressBarContainer">
-        <div id="progressBarFill"></div>
-    </div>
-    <div id="statusText"></div>
-
-</div>
-
-<!-- *** JSZip دیگر اینجا لازم نیست، در Worker ایمپورت می‌شود *** -->
-<!-- <script src="path/to/jszip.min.js"></script> -->
-
-<script>
-    // --- انتخاب عناصر DOM ---
-    const chapterNameInput = document.getElementById('chapterNameInput');
-    const imageFileInput = document.getElementById('imageFileInput');
-    const fileListDiv = document.getElementById('fileList');
-    const widthInput = document.getElementById('widthInput');
-    const maxHeightInput = document.getElementById('maxHeightInput');
-    const formatSelect = document.getElementById('formatSelect');
-    const qualityInput = document.getElementById('qualityInput');
-    const qualityValue = document.getElementById('qualityValue');
-    const processButton = document.getElementById('processButton');
-    const progressBarContainer = document.getElementById('progressBarContainer');
-    const progressBarFill = document.getElementById('progressBarFill');
-    const statusText = document.getElementById('statusText');
-
-    let imageFiles = []; // آرایه‌ای برای نگهداری فایل‌های عکس انتخاب شده
-    let imageWorker = null; // متغیر برای نگهداری نمونه Worker
-
-    // --- مقدار دهی اولیه Worker ---
-    try {
-        imageWorker = new Worker('image-processor.js');
-        console.log("Web Worker created successfully.");
-
-        // Listener برای پیام‌های دریافتی از Worker
-        imageWorker.onmessage = (event) => {
-            const data = event.data;
-
-            switch (data.type) {
-                case 'progress':
-                    // به‌روزرسانی پیشرفت
-                    updateProgress(data.value);
-                    statusText.textContent = data.status;
-                    console.log(`Worker Progress: ${data.value * 100}% - ${data.status}`);
-                    break;
-                case 'result':
-                    // پردازش موفقیت آمیز بود، نتیجه را دانلود کن
-                    statusText.textContent = `عملیات با موفقیت انجام شد. در حال آماده سازی دانلود ${data.fileName}...`;
-                    updateProgress(1); // اطمینان از 100% شدن
-                    downloadBlob(data.blob, data.fileName);
-                    // بازگرداندن UI به حالت اولیه
-                    resetUI(true, `عملیات با موفقیت انجام شد. فایل ${data.fileName} دانلود شد.`);
-                    break;
-                case 'error':
-                    // خطا در Worker رخ داده است
-                    console.error('Worker Error:', data.message);
-                    statusText.textContent = `خطا در پردازش: ${data.message}`;
-                    alert(`پردازش ناموفق بود:\n${data.message}`);
-                    // بازگرداندن UI به حالت اولیه
-                    resetUI(false, `خطا: ${data.message}`);
-                    break;
-                 case 'file_error':
-                     // خطا در پردازش یک فایل خاص
-                     console.warn(`Worker File Error (${data.fileName}): ${data.message}`);
-                     // فقط متن وضعیت را آپدیت می‌کنیم یا می‌توان یک لیست خطا نمایش داد
-                     // در اینجا فرض می‌کنیم پردازش ادامه دارد و فقط یک هشدار می‌دهیم
-                     statusText.textContent = data.message; // نمایش آخرین خطای فایل
-                     break;
-                default:
-                    console.warn('Received unknown message type from worker:', data.type);
-            }
-        };
-
-        // Listener برای خطاهای خود Worker (مثلا خطای اسکریپت در فایل js)
-        imageWorker.onerror = (error) => {
-            console.error(`Worker global error: ${error.message}`, error);
-            statusText.textContent = `خطای داخلی در Worker رخ داد: ${error.message}. کنسول را بررسی کنید.`;
-            alert(`خطای Worker:\n${error.message}`);
-             // بازگرداندن UI به حالت اولیه
-            resetUI(false, `خطای Worker: ${error.message}`);
-            // در صورت بروز خطا در Worker، ممکن است لازم باشد آن را خاتمه داده و دوباره ایجاد کنیم
-            // imageWorker.terminate();
-            // imageWorker = null; // یا ایجاد مجدد
-        };
-
-    } catch (e) {
-        console.error("Failed to create Web Worker:", e);
-        statusText.textContent = "خطا: مرورگر شما از Web Worker پشتیبانی نمی‌کند یا فایل Worker یافت نشد.";
-        processButton.disabled = true; // غیرفعال کردن دکمه چون Worker کار نمی‌کند
-        alert("امکان ایجاد Web Worker وجود ندارد. این ابزار کار نخواهد کرد.");
-    }
-
-
-    // --- Event Listeners ---
-
-    // به‌روزرسانی مقدار نمایش داده شده کیفیت
-    qualityInput.addEventListener('input', () => {
-        qualityValue.textContent = qualityInput.value;
-    });
-
-    // مدیریت انتخاب فایل‌ها
-    imageFileInput.addEventListener('change', (event) => {
-        const newFiles = Array.from(event.target.files);
-        // فیلتر کردن فقط فایل‌های تصویری مجاز
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        const validImageFiles = newFiles.filter(file => allowedTypes.includes(file.type));
-
-        // اضافه کردن فایل‌های جدید به لیست، جلوگیری از تکرار بر اساس نام
-        const existingNames = imageFiles.map(f => f.name);
-        validImageFiles.forEach(file => {
-            if (!existingNames.includes(file.name)) {
-                imageFiles.push(file);
-            } else {
-                console.warn(`فایل تکراری نادیده گرفته شد: ${file.name}`);
-            }
-        });
-
-        updateImageList(); // به‌روزرسانی نمایش لیست فایل‌ها
-         // پاک کردن مقدار file input تا انتخاب مجدد همان فایل‌ها ممکن باشد
-         event.target.value = null;
-    });
-
-    // تابع برای به‌روزرسانی لیست فایل‌های نمایشی در HTML
-    function updateImageList() {
-        fileListDiv.innerHTML = ''; // پاک کردن لیست قبلی
-        if (imageFiles.length === 0) {
-            fileListDiv.innerHTML = '<p>هنوز عکسی انتخاب نشده است.</p>';
-            return;
-        }
-
-        const ul = document.createElement('ul');
-        imageFiles.forEach((file, index) => {
-            const li = document.createElement('li');
-            const fileNameSpan = document.createElement('span');
-            fileNameSpan.textContent = `${index + 1}. ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-
-            const buttonsDiv = document.createElement('div');
-
-            // دکمه بالا بردن
-            const upButton = document.createElement('button');
-            upButton.textContent = '↑';
-            upButton.dataset.index = index;
-            upButton.classList.add('up-btn');
-            upButton.disabled = index === 0; // غیرفعال کردن برای اولین آیتم
-            upButton.style.backgroundColor = '#f0ad4e'; // نارنجی
-
-            // دکمه پایین بردن
-            const downButton = document.createElement('button');
-            downButton.textContent = '↓';
-            downButton.dataset.index = index;
-            downButton.classList.add('down-btn');
-            downButton.disabled = index === imageFiles.length - 1; // غیرفعال کردن برای آخرین آیتم
-            downButton.style.backgroundColor = '#5bc0de'; // آبی روشن
-
-             // دکمه حذف
-            const removeButton = document.createElement('button');
-            removeButton.textContent = '✖'; // یا از آیکون استفاده کنید
-            removeButton.dataset.index = index;
-            removeButton.classList.add('remove-btn');
-            removeButton.style.backgroundColor = '#ef4444'; // رنگ قرمز برای حذف
-            removeButton.style.marginLeft = '5px'; // کمی فاصله
-
-            buttonsDiv.appendChild(upButton);
-            buttonsDiv.appendChild(downButton);
-            buttonsDiv.appendChild(removeButton); // اضافه کردن دکمه حذف
-
-            li.appendChild(fileNameSpan);
-            li.appendChild(buttonsDiv);
-            ul.appendChild(li);
-        });
-
-        fileListDiv.appendChild(ul);
-    }
-
-    // Event listener برای دکمه‌های تغییر ترتیب و حذف در لیست عکس‌ها (Event Delegation)
-    fileListDiv.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.tagName !== 'BUTTON') return; // فقط به کلیک روی دکمه‌ها پاسخ بده
-
-        const index = parseInt(target.dataset.index);
-
-        if (target.classList.contains('up-btn') && index > 0) {
-            // جابجایی با آیتم بالایی
-            [imageFiles[index], imageFiles[index - 1]] = [imageFiles[index - 1], imageFiles[index]];
-            updateImageList();
-        } else if (target.classList.contains('down-btn') && index < imageFiles.length - 1) {
-            // جابجایی با آیتم پایینی
-            [imageFiles[index], imageFiles[index + 1]] = [imageFiles[index + 1], imageFiles[index]];
-            updateImageList();
-        } else if (target.classList.contains('remove-btn')) {
-            // حذف آیتم از لیست
-            imageFiles.splice(index, 1);
-            updateImageList();
-        }
-    });
-
-    // --- توابع حذف شده ---
-    // function loadImage(file) { ... } // منتقل شد به Worker
-    // async function resizeImage(img, targetWidth) { ... } // منتقل شد به Worker
-
-    // تابع برای به‌روزرسانی نوار پیشرفت (باقی می‌ماند)
-    function updateProgress(value) {
-        const percentage = Math.max(0, Math.min(100, Math.round(value * 100))); // اطمینان از بازه 0 تا 100
-        progressBarFill.style.width = `${percentage}%`;
-        // نمایش درصد روی نوار پیشرفت (اختیاری)
-         progressBarFill.textContent = `${percentage}%`;
-    }
-
-     // تابع برای بازنشانی UI پس از اتمام یا خطا
-     function resetUI(isSuccess, message) {
-         progressBarContainer.style.display = 'none'; // مخفی کردن نوار پیشرفت
-         processButton.disabled = false; // فعال کردن دوباره دکمه پردازش
-         updateProgress(0); // ریست کردن نوار پیشرفت برای اجرای بعدی
-         progressBarFill.textContent = ''; // پاک کردن درصد از روی نوار
-         statusText.textContent = message || (isSuccess ? 'آماده برای پردازش بعدی.' : 'پردازش متوقف شد.');
-         // اختیاری: پاک کردن لیست فایل‌ها پس از پردازش موفق
-         // if (isSuccess) {
-         //     imageFiles = [];
-         //     updateImageList();
-         // }
-     }
-
-
-    // --- تابع اصلی شروع پردازش (ارسال پیام به Worker) ---
-    async function startImageProcessing() { // تغییر نام تابع برای وضوح
-        if (!imageWorker) {
-            statusText.textContent = 'خطا: پردازشگر Web Worker آماده نیست.';
-            console.error("Cannot process: Worker is not available.");
-            alert('Worker در دسترس نیست. لطفاً صفحه را رفرش کنید.');
-            return;
-        }
-
-        // استفاده از imageFiles
-        if (imageFiles.length === 0) {
-            alert('لطفاً ابتدا فایل‌های عکس را انتخاب کنید.');
-            return;
-        }
-
-        if (!chapterNameInput.value.trim()) {
-            alert('لطفاً نام چپتر را وارد کنید.');
-            chapterNameInput.focus(); // فوکوس روی فیلد نام چپتر
-            return;
-        }
-
-        const width = parseInt(widthInput.value);
-        const maxHeight = parseInt(maxHeightInput.value);
-        // مقدار quality را به عنوان عدد 0 تا 100 ارسال می‌کنیم، Worker آن را تقسیم بر 100 می‌کند اگر لازم باشد
-        // یا می‌توانیم همینجا تقسیم کنیم: const quality = parseInt(qualityInput.value) / 100;
-        // در اینجا همان عدد 10 تا 100 را ارسال می‌کنیم:
-        const quality = parseInt(qualityInput.value);
-        const format = formatSelect.value;
-        const chapterName = chapterNameInput.value.trim();
-
-        // اعتبارسنجی مقادیر ورودی (همچنان لازم است)
-        if (isNaN(width) || width <= 0 || width > 10000) {
-            alert('عرض باید یک عدد معتبر بین 1 تا 10000 پیکسل باشد.');
-            widthInput.focus();
-            return;
-        }
-
-        if (isNaN(maxHeight) || maxHeight <= 0 || maxHeight > 20000) {
-            alert('حداکثر طول باید یک عدد معتبر بین 1 تا 20000 پیکسل باشد.');
-            maxHeightInput.focus();
-            return;
-        }
-         if (isNaN(quality) || quality < 10 || quality > 100) {
-             alert('کیفیت باید عددی بین 10 تا 100 باشد.');
-             qualityInput.focus();
-             return;
-         }
-
-        // --- آماده سازی UI و ارسال پیام به Worker ---
-        progressBarContainer.style.display = 'block';
-        processButton.disabled = true;
-        statusText.textContent = `در حال ارسال ${imageFiles.length} فایل به پردازشگر...`;
-        updateProgress(0); // ریست کردن نوار پیشرفت
-
-        // ساخت شیء داده برای ارسال به Worker
-        const workerData = {
-            files: imageFiles, // ارسال آرایه فایل‌ها - قابل انتقال (Transferable) هستند
-            width: width,
-            maxHeight: maxHeight,
-            quality: quality / 100, // تبدیل کیفیت به بازه 0 تا 1 در اینجا
-            format: format,
-            chapterName: chapterName
-        };
-
-        try {
-            // ارسال داده‌ها به Worker
-            imageWorker.postMessage(workerData);
-             // پیام workerData.files به صورت ضمنی منتقل می‌شود (Zero-copy یا Structured Clone)
-             // نیازی به انتقال صریح با آرگومان دوم postMessage نیست مگر اینکه بخواهیم کنترل بیشتری داشته باشیم
-             // imageWorker.postMessage(workerData, imageFiles.map(f => f)); // این کار نمی‌کند برای File
-
-             console.log("Data sent to worker:", workerData);
-
-        } catch (postMessageError) {
-            console.error("Error sending data to worker:", postMessageError);
-            statusText.textContent = `خطا در ارسال داده به پردازشگر: ${postMessageError.message}`;
-            // بازگرداندن UI به حالت اولیه در صورت خطای ارسال
-            resetUI(false, `خطا در ارسال داده: ${postMessageError.message}`);
-            if (postMessageError.name === 'DataCloneError') {
-                alert('خطا: امکان ارسال داده‌های پیچیده به Worker وجود ندارد. لطفاً ورودی‌ها را بررسی کنید.');
-            }
-        }
-
-        // *** منطق پردازش اصلی (حلقه‌ها، canvas، zip) از اینجا حذف شد ***
-
-    } // --- پایان تابع startImageProcessing ---
-
-    // تابع کمکی برای دانلود Blob (باقی می‌ماند)
-    function downloadBlob(blob, fileName) {
-        const link = document.createElement('a');
-        fileName = fileName || 'download'; // اطمینان از وجود نام فایل
-        const url = URL.createObjectURL(blob);
-
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link); // لازم است در برخی مرورگرها
-        link.click();
-
-        // پاکسازی
-        document.body.removeChild(link);
-        // با کمی تاخیر URL را revoke می‌کنیم تا دانلود شروع شود
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-    }
-
-    // اتصال تابع شروع پردازش به دکمه
-    processButton.addEventListener('click', startImageProcessing);
-
-    // نمایش اولیه لیست فایل‌ها (اگر صفحه‌ای رفرش شود و فایلی انتخاب شده باشد - معمولا خالی است)
-    // updateImageList(); // لزومی ندارد چون imageFiles در ابتدا خالی است
-
-</script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
