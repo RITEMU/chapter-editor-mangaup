@@ -1,84 +1,94 @@
 self.onmessage = async (e) => {
-    const { files, targetWidth, targetHeight, quality, format, outputName } = e.data;
-    const zip = new JSZip();
-    let remainingCanvas = null;
-    let outputIndex = 1;
+    const { images, settings } = e.data;
+    let processedImages = [];
+    let currentCanvas = null;
+    let currentHeight = 0;
+    let imageCounter = 1;
 
-    for (let i = 0; i < files.length; i++) {
-        let img = await loadImage(files[i]);
-        img = resizeImage(img, targetWidth);
+    // Helper to send progress
+    function sendProgress(percent) {
+        self.postMessage({ type: 'progress', data: percent });
+    }
 
-        if (remainingCanvas) {
-            img = combineImages(remainingCanvas, img);
-            remainingCanvas = null;
-        }
+    // Helper to send log
+    function sendLog(message) {
+        self.postMessage({ type: 'log', data: message });
+    }
 
-        while (img.height > targetHeight) {
-            const cropped = cropImage(img, 0, 0, img.width, targetHeight);
-            const outputData = canvasToDataUrl(cropped, format, quality);
-            zip.file(`${String(outputIndex).padStart(3, '0')}.${format}`, outputData.split(',')[1], { base64: true });
-            outputIndex++;
-            const remainingHeight = img.height - targetHeight;
-            remainingCanvas = cropImage(img, 0, targetHeight, img.width, remainingHeight);
-            img = remainingCanvas;
-        }
+    // Process each image
+    for (let i = 0; i < images.length; i++) {
+        const imgBlob = images[i];
+        sendLog(`در حال پردازش تصویر ${i + 1} از ${images.length}`);
+        sendProgress((i / images.length) * 100 * 0.8);
 
-        if (i === files.length - 1 && img.height > 0) {
-            const outputData = canvasToDataUrl(img, format, quality);
-            zip.file(`${String(outputIndex).padStart(3, '0')}.${format}`, outputData.split(',')[1], { base64: true });
-        } else if (img.height > 0) {
-            remainingCanvas = img;
+        // Load image
+        const img = await createImageBitmap(imgBlob);
+
+        // Resize image to target width while maintaining aspect ratio
+        const targetWidth = settings.width;
+        const aspectRatio = img.width / img.height;
+        const targetHeight = Math.round(targetWidth / aspectRatio);
+
+        let canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        let remainingHeight = targetHeight;
+        let offsetY = 0;
+
+        while (remainingHeight > 0) {
+            if (currentCanvas === null) {
+                currentCanvas = document.createElement('canvas');
+                currentCanvas.width = targetWidth;
+                currentCanvas.height = Math.min(settings.height, remainingHeight);
+                currentHeight = currentCanvas.height;
+                let currentCtx = currentCanvas.getContext('2d');
+                currentCtx.drawImage(canvas, 0, offsetY, targetWidth, currentCanvas.height, 0, 0, targetWidth, currentCanvas.height);
+            } else {
+                let spaceLeft = settings.height - currentHeight;
+                if (spaceLeft > 0) {
+                    let heightToAdd = Math.min(spaceLeft, remainingHeight);
+                    let currentCtx = currentCanvas.getContext('2d');
+                    currentCtx.drawImage(canvas, 0, offsetY, targetWidth, heightToAdd, 0, currentHeight, targetWidth, heightToAdd);
+                    currentHeight += heightToAdd;
+                }
+            }
+
+            if (currentHeight >= settings.height) {
+                const format = settings.format === 'jpeg' ? 'image/jpeg' : settings.format === 'webp' ? 'image/webp' : 'image/png';
+                const dataUrl = currentCanvas.toDataURL(format, settings.quality);
+                const binary = atob(dataUrl.split(',')[1]);
+                const array = new Uint8Array(binary.length);
+                for (let j = 0; j < binary.length; j++) {
+                    array[j] = binary.charCodeAt(j);
+                }
+                processedImages.push(array);
+                sendLog(`تصویر خروجی ${String(imageCounter).padStart(3, '0')} ذخیره شد.`);
+                imageCounter++;
+                currentCanvas = null;
+                currentHeight = 0;
+            }
+
+            offsetY += currentHeight;
+            remainingHeight -= currentHeight;
         }
     }
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    self.postMessage({ zipBlob, outputName });
+    // Save remaining canvas if exists
+    if (currentCanvas !== null) {
+        const format = settings.format === 'jpeg' ? 'image/jpeg' : settings.format === 'webp' ? 'image/webp' : 'image/png';
+        const dataUrl = currentCanvas.toDataURL(format, settings.quality);
+        const binary = atob(dataUrl.split(',')[1]);
+        const array = new Uint8Array(binary.length);
+        for (let j = 0; j < binary.length; j++) {
+            array[j] = binary.charCodeAt(j);
+        }
+        processedImages.push(array);
+        sendLog(`تصویر خروجی ${String(imageCounter).padStart(3, '0')} ذخیره شد.`);
+    }
+
+    sendProgress(100);
+    self.postMessage({ type: 'result', data: processedImages });
 };
-
-async function loadImage(file) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = () => {
-            const canvas = new OffscreenCanvas(img.width, img.height);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas);
-        };
-    });
-}
-
-function resizeImage(canvas, targetWidth) {
-    if (canvas.width === targetWidth) return canvas;
-    const ratio = targetWidth / canvas.width;
-    const newHeight = Math.round(canvas.height * ratio);
-    const newCanvas = new OffscreenCanvas(targetWidth, newHeight);
-    const ctx = newCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, 0, targetWidth, newHeight);
-    return newCanvas;
-}
-
-function combineImages(topCanvas, bottomCanvas) {
-    const newCanvas = new OffscreenCanvas(bottomCanvas.width, topCanvas.height + bottomCanvas.height);
-    const ctx = newCanvas.getContext('2d');
-    ctx.drawImage(topCanvas, 0, 0);
-    ctx.drawImage(bottomCanvas, 0, topCanvas.height);
-    return newCanvas;
-}
-
-function cropImage(canvas, x, y, width, height) {
-    const newCanvas = new OffscreenCanvas(width, height);
-    const ctx = newCanvas.getContext('2d');
-    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
-    return newCanvas;
-}
-
-function canvasToDataUrl(canvas, format, quality) {
-    return canvas.convertToBlob({ type: `image/${format}`, quality }).then(blob => {
-        return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-        });
-    });
-}
