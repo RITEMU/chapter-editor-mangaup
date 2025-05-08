@@ -1,19 +1,153 @@
-/* استایل‌های اضافی برای پنل درختی */
-.file-item {
-    cursor: move;
-    user-select: none;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Tahoma', sans-serif;
+}
+
+body {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.input-section, .settings-section, .button-section, .progress-section, .log-section {
+    margin-bottom: 30px;
+}
+
+.input-section input[type="file"] {
+    display: block;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.tree-panel {
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+#imageTree {
+    list-style-type: none;
+}
+
+#imageTree li {
     padding: 5px;
+    cursor: move;
+    border: 1px dashed #ddd;
     margin: 2px 0;
-    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.settings-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.settings-section div {
+    display: flex;
+    align-items: center;
+}
+
+.settings-section label {
+    width: 120px;
+    font-weight: bold;
+}
+
+.settings-section input, .settings-section select {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
     border-radius: 5px;
-    background-color: #f7fafc;
 }
 
-.file-item:hover {
-    background-color: #edf2f7;
+.button-section {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
 }
 
-/* استایل برای حالت درگ کردن */
-.dragging {
-    opacity: 0.5;
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#startBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#resetBtn {
+    background-color: #f44336;
+    color: white;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress {
+    width: 0;
+    height: 30px;
+    background-color: #4CAF50;
+    transition: width 0.3s;
+}
+
+#progressText {
+    text-align: center;
+    font-weight: bold;
+}
+
+.log-section {
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+#log {
+    white-space: pre-wrap;
+    font-size: 14px;
+}
+
+/* رسپانسیو کردن */
+@media (max-width: 768px) {
+    .settings-section {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .button-section {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
 }
