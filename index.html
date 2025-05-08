@@ -3,92 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مانهوا ادیتور</title>
+    <title>پردازشگر مانهوا</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .tree-item {
-            transition: background 0.2s;
-        }
-        .tree-item:hover {
-            background-color: #f0f0f0;
-        }
-        .log-box {
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        @media (max-width: 640px) {
-            .container {
-                padding: 10px;
-            }
-            .grid-cols-2 {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center mb-6">مانهوا ادیتور</h1>
-
-        <!-- بخش آپلود فایل -->
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-4">
+    <h1 class="text-2xl md:text-3xl font-bold mb-6 text-gray-800">پردازشگر تصاویر مانهوا</h1>
+    <div class="container mx-auto max-w-4xl bg-white rounded-lg shadow-md p-6">
+        <!-- بخش آپلود تصاویر -->
         <div class="mb-6">
-            <label for="fileInput" class="block text-lg font-medium text-gray-700 mb-2">آپلود تصاویر مانهوا</label>
-            <input type="file" id="fileInput" multiple accept="image/*" class="w-full p-2 border rounded">
+            <label for="imageInput" class="block text-gray-700 font-semibold mb-2">آپلود تصاویر:</label>
+            <input type="file" id="imageInput" accept="image/*" multiple class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-
-        <!-- پنل درختی فایل‌ها -->
+        <!-- پنل نمایش درختی تصاویر -->
         <div class="mb-6">
-            <label class="block text-lg font-medium text-gray-700 mb-2">لیست تصاویر (قابلیت جابجایی)</label>
-            <div id="treePanel" class="bg-white border rounded p-4 min-h-[150px] overflow-auto"></div>
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">لیست تصاویر آپلود شده:</h2>
+            <div id="fileTree" class="border rounded-md p-4 bg-gray-50 h-48 overflow-y-auto"></div>
         </div>
-
-        <!-- تنظیمات -->
-        <div class="grid grid-cols-2 gap-4 mb-6">
+        <!-- ورودی‌های تنظیمات -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-                <label for="outputName" class="block text-lg font-medium text-gray-700">نام فایل خروجی (ZIP)</label>
-                <input type="text" id="outputName" value="chapter_output" class="w-full p-2 border rounded">
+                <label for="outputName" class="block text-gray-700 font-semibold mb-2">نام فایل خروجی (زیپ):</label>
+                <input type="text" id="outputName" value="manhwa_output" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="widthInput" class="block text-lg font-medium text-gray-700">عرض تصویر (پیکسل)</label>
-                <input type="number" id="widthInput" value="800" min="100" class="w-full p-2 border rounded">
+                <label for="widthInput" class="block text-gray-700 font-semibold mb-2">عرض تصویر (پیکسل):</label>
+                <input type="number" id="widthInput" value="800" min="100" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="heightInput" class="block text-lg font-medium text-gray-700">ارتفاع برش (پیکسل)</label>
-                <input type="number" id="heightInput" value="12000" min="1000" class="w-full p-2 border rounded">
+                <label for="heightInput" class="block text-gray-700 font-semibold mb-2">ارتفاع حداکثر (پیکسل):</label>
+                <input type="number" id="heightInput" value="12000" min="1000" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="qualityInput" class="block text-lg font-medium text-gray-700">کیفیت خروجی (1-100)</label>
-                <input type="number" id="qualityInput" value="80" min="1" max="100" class="w-full p-2 border rounded">
+                <label for="qualityInput" class="block text-gray-700 font-semibold mb-2">کیفیت خروجی (درصد):</label>
+                <input type="number" id="qualityInput" value="95" min="1" max="100" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-                <label for="formatSelect" class="block text-lg font-medium text-gray-700">فرمت خروجی</label>
-                <select id="formatSelect" class="w-full p-2 border rounded">
+                <label for="formatSelect" class="block text-gray-700 font-semibold mb-2">فرمت خروجی:</label>
+                <select id="formatSelect" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="webp" selected>WEBP</option>
                     <option value="jpeg">JPG</option>
                     <option value="png">PNG</option>
                 </select>
             </div>
         </div>
-
-        <!-- لاگ پیشرفت -->
-        <div class="mb-6">
-            <label class="block text-lg font-medium text-gray-700 mb-2">لاگ پیشرفت</label>
-            <div id="logBox" class="log-box"></div>
-        </div>
-
         <!-- دکمه‌ها -->
-        <div class="flex justify-center gap-4">
-            <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">شروع عملیات</button>
-            <button id="resetBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">ریست</button>
+        <div class="flex flex-col md:flex-row justify-center gap-4">
+            <button id="processBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>شروع پردازش</button>
+            <button id="resetBtn" class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600">ریست</button>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
